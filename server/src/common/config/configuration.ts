@@ -1,5 +1,4 @@
 import { ConfigService } from '@nestjs/config';
-import { ElasticsearchModuleOptions } from '@nestjs/elasticsearch';
 
 export default () => {
   return {
@@ -32,12 +31,3 @@ export default () => {
       '/account/recover/password/verify?token=',
   };
 };
-
-export function elasticsearchConfigFactory(
-  configService: ConfigService,
-): ElasticsearchModuleOptions {
-  const config = configService.get<ElasticsearchModuleOptions>('elasticsearch');
-  if (config == undefined)
-    throw new Error('Elasticsearch configuration not found');
-  return config;
-}
