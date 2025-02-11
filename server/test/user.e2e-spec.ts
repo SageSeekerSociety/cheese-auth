@@ -18,7 +18,7 @@ describe('User Module', () => {
   const MockedEmailService = <jest.Mock<EmailService>>EmailService;
   const TestUsername = `TestUser-${Math.floor(Math.random() * 10000000000)}`;
   const TestEmail = `test-${Math.floor(
-    Math.random() * 10000000000,
+    Math.random() * 10000000000
   )}@ruc.edu.cn`;
   let TestRefreshTokenOld: string;
   let TestRefreshToken: string;
@@ -115,10 +115,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith(TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -157,10 +157,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith(TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -215,10 +215,10 @@ describe('User Module', () => {
       });
       expect(respond.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith('another-' + TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -284,10 +284,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith('another-' + TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -306,7 +306,7 @@ describe('User Module', () => {
       expect(respond.body.message).toStrictEqual(
         `InvalidUsernameError: Invalid username: ${
           TestUsername + ' Invalid'
-        }. Username must be 4-32 characters long and can only contain letters, numbers, underscores and hyphens.`,
+        }. Username must be 4-32 characters long and can only contain letters, numbers, underscores and hyphens.`
       );
       expect(respond.body.code).toEqual(422);
       req.expect(422);
@@ -324,10 +324,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith('another-' + TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -344,7 +344,7 @@ describe('User Module', () => {
         });
       const respond = await req;
       expect(respond.body.message).toStrictEqual(
-        `InvalidNicknameError: Invalid nickname: test user. Nickname must be 1-16 characters long and can only contain letters, numbers, underscores, hyphens and Chinese characters.`,
+        `InvalidNicknameError: Invalid nickname: test user. Nickname must be 1-16 characters long and can only contain letters, numbers, underscores, hyphens and Chinese characters.`
       );
       expect(respond.body.code).toEqual(422);
       req.expect(422);
@@ -362,10 +362,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith('another-' + TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -382,7 +382,7 @@ describe('User Module', () => {
         });
       const respond = await req;
       expect(respond.body.message).toStrictEqual(
-        `InvalidPasswordError: Invalid password. Password must be at least 8 characters long and must contain at least one letter, one special character and one number.`,
+        `InvalidPasswordError: Invalid password. Password must be at least 8 characters long and must contain at least one letter, one special character and one number.`
       );
       expect(respond.body.code).toEqual(422);
       req.expect(422);
@@ -400,10 +400,10 @@ describe('User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode,
+        MockedEmailService.mock.instances[0].sendRegisterCode
       ).toHaveBeenCalledWith('another-' + TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -422,7 +422,7 @@ describe('User Module', () => {
       expect(respond.body.message).toStrictEqual(
         `CodeNotMatchError: Code not match: ${'another-' + TestEmail}, ${
           verificationCode + '1'
-        }`,
+        }`
       );
       expect(respond.body.code).toEqual(422);
       req.expect(422);
@@ -444,7 +444,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -457,7 +457,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`
         )
         .send();
       expect(respond2.body.message).toBe('Refresh token successfully.');
@@ -477,7 +477,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshTokenOld};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshTokenOld};    other_cookie=value`
         )
         .send();
       expect(respond2.body.message).toMatch(/^RefreshTokenAlreadyUsedError: /);
@@ -508,7 +508,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`
         )
         .send();
       expect(respond2.body.message).toBe('Refresh token successfully.');
@@ -525,7 +525,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`
         )
         .send();
       expect(respond3.body.message).toMatch(/^TokenExpiredError: /);
@@ -547,7 +547,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -564,7 +564,7 @@ describe('User Module', () => {
           .post('/users/auth/refresh-token')
           .set(
             'Cookie',
-            `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`,
+            `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`
           )
           .send();
         expect(respond2.body.message).toBe('Refresh token successfully.');
@@ -582,7 +582,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${refreshToken};    other_cookie=value`
         )
         .send();
       expect(respond2.body.message).toMatch(/^SessionExpiredError: /);
@@ -604,7 +604,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -617,7 +617,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`
         )
         .send();
       expect(respond2.body.message).toBe('Refresh token successfully.');
@@ -661,7 +661,7 @@ describe('User Module', () => {
         .post('/users/auth/logout')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`
         )
         .send();
       expect(respond.body.message).toBe('Logout successfully.');
@@ -690,7 +690,7 @@ describe('User Module', () => {
         .post('/users/auth/refresh-token')
         .set(
           'Cookie',
-          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`,
+          `some_cookie=12345;    REFRESH_TOKEN=${TestRefreshToken};    other_cookie=value`
         )
         .send();
       expect(respond.body.message).toMatch(/^SessionRevokedError: /);
@@ -728,7 +728,7 @@ describe('User Module', () => {
       MockedEmailService.prototype.sendPasswordResetEmail.mockImplementation(
         () => {
           throw new Error('Email service error');
-        },
+        }
       );
       const respond = await request(app.getHttpServer())
         .post('/users/recover/password/request')
@@ -742,7 +742,7 @@ describe('User Module', () => {
       MockedEmailService.prototype.sendPasswordResetEmail.mockImplementation(
         () => {
           return;
-        },
+        }
       );
     });
 
@@ -771,10 +771,10 @@ describe('User Module', () => {
       expect(respond.body.code).toBe(201);
       expect(respond.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveBeenCalledWith(TestEmail, TestUsername, expect.any(String));
       const token = (
         MockedEmailService.mock.instances[0].sendPasswordResetEmail as jest.Mock
@@ -834,10 +834,10 @@ describe('User Module', () => {
       expect(respond.body.code).toBe(201);
       expect(respond.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveBeenCalledWith(TestEmail, TestUsername, expect.any(String));
       const token = (
         MockedEmailService.mock.instances[0].sendPasswordResetEmail as jest.Mock
@@ -872,10 +872,10 @@ describe('User Module', () => {
       expect(respond.body.code).toBe(201);
       expect(respond.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendPasswordResetEmail,
+        MockedEmailService.mock.instances[0].sendPasswordResetEmail
       ).toHaveBeenCalledWith(TestEmail, TestUsername, expect.any(String));
       const token = (
         MockedEmailService.mock.instances[0].sendPasswordResetEmail as jest.Mock

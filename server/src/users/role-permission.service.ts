@@ -5,7 +5,7 @@ import { Authorization } from '../auth/definitions';
 export class RolePermissionService {
   async getAuthorizationForUserWithRole(
     userId: number,
-    roleName: string,
+    roleName: string
   ): Promise<Authorization> {
     switch (roleName) {
       case 'standard-user':
@@ -17,7 +17,7 @@ export class RolePermissionService {
   }
 
   private async getAuthorizationForStandardUser(
-    userId: number,
+    userId: number
   ): Promise<Authorization> {
     return {
       userId: userId,

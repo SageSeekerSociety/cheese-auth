@@ -26,7 +26,7 @@ export class AvatarsService implements OnModuleInit {
     /* istanbul ignore if */
     if (!process.env.DEFAULT_AVATAR_NAME) {
       throw new Error(
-        'DEFAULT_AVATAR_NAME environment variable is not defined',
+        'DEFAULT_AVATAR_NAME environment variable is not defined'
       );
     }
     const defaultAvatarName = process.env.DEFAULT_AVATAR_NAME;
@@ -66,7 +66,7 @@ export class AvatarsService implements OnModuleInit {
       });
       if (!predefinedAvatar) {
         const predefinedAvatars = avatarFiles.filter(
-          (file) => file !== defaultAvatarName,
+          (file) => file !== defaultAvatarName
         );
         if (predefinedAvatars.length === 0) {
           throw new Error('no predefined avatars found');
@@ -83,7 +83,7 @@ export class AvatarsService implements OnModuleInit {
                 createdAt: new Date(),
               },
             });
-          }),
+          })
         );
       }
     });
@@ -138,7 +138,7 @@ export class AvatarsService implements OnModuleInit {
       },
     });
     const PreDefinedAvatarIds = PreDefinedAvatars.map(
-      (PreDefinedAvatars) => PreDefinedAvatars.id,
+      (PreDefinedAvatars) => PreDefinedAvatars.id
     );
     return PreDefinedAvatarIds;
   }

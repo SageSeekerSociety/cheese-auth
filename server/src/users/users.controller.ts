@@ -70,7 +70,7 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   @ResourceOwnerIdGetter('user')
@@ -83,7 +83,7 @@ export class UsersController {
   async sendRegisterEmailCode(
     @Body() { email }: SendEmailVerifyCodeRequestDto,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<SendEmailVerifyCodeResponseDto> {
     await this.usersService.sendRegisterEmailCode(email, ip, userAgent);
     return {
@@ -99,7 +99,7 @@ export class UsersController {
     { username, nickname, password, email, emailCode }: RegisterRequestDto,
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string | undefined,
-    @Res() res: Response,
+    @Res() res: Response
   ): Promise<Response> {
     const userDto = await this.usersService.register(
       username,
@@ -108,18 +108,18 @@ export class UsersController {
       email,
       emailCode,
       ip,
-      userAgent,
+      userAgent
     );
     const [, refreshToken] = await this.usersService.login(
       username,
       password,
       ip,
-      userAgent,
+      userAgent
     );
     const [newRefreshToken, accessToken] =
       await this.sessionService.refreshSession(refreshToken);
     const newRefreshTokenExpire = new Date(
-      this.authService.decode(newRefreshToken).validUntil,
+      this.authService.decode(newRefreshToken).validUntil
     );
     const data: RegisterResponseDto = {
       code: 201,
@@ -135,7 +135,7 @@ export class UsersController {
         sameSite: 'strict',
         path: path.posix.join(
           this.configService.get('cookieBasePath')!,
-          'users/auth',
+          'users/auth'
         ),
         expires: new Date(newRefreshTokenExpire),
       })
@@ -148,18 +148,18 @@ export class UsersController {
     @Body() { username, password }: LoginRequestDto,
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string | undefined,
-    @Res() res: Response,
+    @Res() res: Response
   ): Promise<Response> {
     const [userDto, refreshToken] = await this.usersService.login(
       username,
       password,
       ip,
-      userAgent,
+      userAgent
     );
     const [newRefreshToken, accessToken] =
       await this.sessionService.refreshSession(refreshToken);
     const newRefreshTokenExpire = new Date(
-      this.authService.decode(newRefreshToken).validUntil,
+      this.authService.decode(newRefreshToken).validUntil
     );
     const data: LoginResponseDto = {
       code: 201,
@@ -175,7 +175,7 @@ export class UsersController {
         sameSite: 'strict',
         path: path.posix.join(
           this.configService.get('cookieBasePath')!,
-          'users/auth',
+          'users/auth'
         ),
         expires: new Date(newRefreshTokenExpire),
       })
@@ -188,14 +188,14 @@ export class UsersController {
     @Headers('cookie') cookieHeader: string,
     @Res() res: Response,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<Response> {
     if (cookieHeader == undefined) {
       throw new AuthenticationRequiredError();
     }
     const cookies = cookieHeader.split(';').map((cookie) => cookie.trim());
     const refreshTokenCookie = cookies.find((cookie) =>
-      cookie.startsWith('REFRESH_TOKEN='),
+      cookie.startsWith('REFRESH_TOKEN=')
     );
     if (refreshTokenCookie == undefined) {
       throw new AuthenticationRequiredError();
@@ -204,14 +204,14 @@ export class UsersController {
     const [newRefreshToken, accessToken] =
       await this.sessionService.refreshSession(refreshToken);
     const newRefreshTokenExpire = new Date(
-      this.authService.decode(newRefreshToken).validUntil,
+      this.authService.decode(newRefreshToken).validUntil
     );
     const decodedAccessToken = this.authService.decode(accessToken);
     const userDto = await this.usersService.getUserDtoById(
       decodedAccessToken.authorization.userId,
       decodedAccessToken.authorization.userId,
       ip,
-      userAgent,
+      userAgent
     );
     const data: RefreshTokenResponseDto = {
       code: 201,
@@ -227,7 +227,7 @@ export class UsersController {
         sameSite: 'strict',
         path: path.posix.join(
           this.configService.get('cookieBasePath')!,
-          'users/auth',
+          'users/auth'
         ),
         expires: new Date(newRefreshTokenExpire),
       })
@@ -237,14 +237,14 @@ export class UsersController {
   @Post('/auth/logout')
   @NoAuth()
   async logout(
-    @Headers('cookie') cookieHeader: string,
+    @Headers('cookie') cookieHeader: string
   ): Promise<BaseResponseDto> {
     if (cookieHeader == undefined) {
       throw new AuthenticationRequiredError();
     }
     const cookies = cookieHeader.split(';').map((cookie) => cookie.trim());
     const refreshTokenCookie = cookies.find((cookie) =>
-      cookie.startsWith('REFRESH_TOKEN='),
+      cookie.startsWith('REFRESH_TOKEN=')
     );
     if (refreshTokenCookie == undefined) {
       throw new AuthenticationRequiredError();
@@ -262,7 +262,7 @@ export class UsersController {
   async sendResetPasswordEmail(
     @Body() { email }: ResetPasswordRequestRequestDto,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<ResetPasswordRequestDto> {
     await this.usersService.sendResetPasswordEmail(email, ip, userAgent);
     return {
@@ -276,13 +276,13 @@ export class UsersController {
   async verifyAndResetPassword(
     @Body() { token, new_password }: ResetPasswordVerifyRequestDto,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<ResetPasswordVerifyResponseDto> {
     await this.usersService.verifyAndResetPassword(
       token,
       new_password,
       ip,
-      userAgent,
+      userAgent
     );
     return {
       code: 201,
@@ -297,13 +297,13 @@ export class UsersController {
     @Headers('Authorization') @AuthToken() auth: string | undefined,
     @UserId() viewerId: number | undefined,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<GetUserResponseDto> {
     const user = await this.usersService.getUserDtoById(
       id,
       viewerId,
       ip,
-      userAgent,
+      userAgent
     );
     return {
       code: 200,
@@ -319,7 +319,7 @@ export class UsersController {
   async updateUser(
     @Param('id', ParseIntPipe) @ResourceId() id: number,
     @Body() { nickname, intro, avatarId }: UpdateUserRequestDto,
-    @Headers('Authorization') @AuthToken() auth: string | undefined,
+    @Headers('Authorization') @AuthToken() auth: string | undefined
   ): Promise<UpdateUserResponseDto> {
     await this.usersService.updateUserProfile(id, nickname, intro, avatarId);
     return {
@@ -333,7 +333,7 @@ export class UsersController {
   async followUser(
     @Param('id', ParseIntPipe) @ResourceId() id: number,
     @Headers('Authorization') @AuthToken() auth: string | undefined,
-    @UserId(true) userId: number,
+    @UserId(true) userId: number
   ): Promise<FollowResponseDto> {
     await this.usersService.addFollowRelationship(userId, id);
     return {
@@ -350,7 +350,7 @@ export class UsersController {
   async unfollowUser(
     @Param('id', ParseIntPipe) @ResourceId() id: number,
     @Headers('Authorization') @AuthToken() auth: string | undefined,
-    @UserId(true) userId: number,
+    @UserId(true) userId: number
   ): Promise<UnfollowResponseDto> {
     await this.usersService.deleteFollowRelationship(userId, id);
     return {
@@ -371,7 +371,7 @@ export class UsersController {
     @Headers('Authorization') @AuthToken() auth: string | undefined,
     @UserId() viewerId: number | undefined,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<GetFollowersResponseDto> {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followers, page] = await this.usersService.getFollowers(
@@ -380,7 +380,7 @@ export class UsersController {
       pageSize,
       viewerId,
       ip,
-      userAgent,
+      userAgent
     );
     return {
       code: 200,
@@ -401,7 +401,7 @@ export class UsersController {
     @Headers('Authorization') @AuthToken() auth: string | undefined,
     @UserId() viewerId: number | undefined,
     @Ip() ip: string,
-    @Headers('User-Agent') userAgent: string | undefined,
+    @Headers('User-Agent') userAgent: string | undefined
   ): Promise<GetFollowersResponseDto> {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followees, page] = await this.usersService.getFollowees(
@@ -410,7 +410,7 @@ export class UsersController {
       pageSize,
       viewerId,
       ip,
-      userAgent,
+      userAgent
     );
     return {
       code: 200,

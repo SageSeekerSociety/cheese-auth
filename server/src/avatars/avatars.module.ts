@@ -17,7 +17,7 @@ import { AvatarsService } from './avatars.service';
           if (!process.env.FILE_UPLOAD_PATH) {
             return callback(
               new Error('FILE_UPLOAD_PATH environment variable is not defined'),
-              'error',
+              'error'
             );
           }
           const dest = join(process.env.FILE_UPLOAD_PATH, 'avatars');

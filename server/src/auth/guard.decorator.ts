@@ -19,26 +19,26 @@ import { AuthorizedAction } from './definitions';
 const RESOURCE_ID_METADATA_KEY = Symbol('resourceIdMetadata');
 const AUTH_TOKEN_METADATA_KEY = Symbol('authTokenMetadata');
 const RESOURCE_OWNER_ID_GETTER_METADATA_KEY = Symbol(
-  'resourceOwnerIdGetterMetadata',
+  'resourceOwnerIdGetterMetadata'
 );
 const CURRENT_USER_OWN_RESOURCE_METADATA_KEY = Symbol(
-  'currentUserOwnResourceMetadata',
+  'currentUserOwnResourceMetadata'
 );
 export const HAS_GUARD_DECORATOR_METADATA_KEY = Symbol(
-  'hasGuardDecoratorMetadata',
+  'hasGuardDecoratorMetadata'
 );
 
 export function ResourceId() {
   return function (
     target: Object,
     propertyKey: string | symbol,
-    parameterIndex: number,
+    parameterIndex: number
   ) {
     Reflect.defineMetadata(
       RESOURCE_ID_METADATA_KEY,
       parameterIndex,
       target,
-      propertyKey,
+      propertyKey
     );
   };
 }
@@ -47,13 +47,13 @@ export function AuthToken() {
   return function (
     target: Object,
     propertyKey: string | symbol,
-    parameterIndex: number,
+    parameterIndex: number
   ) {
     Reflect.defineMetadata(
       AUTH_TOKEN_METADATA_KEY,
       parameterIndex,
       target,
-      propertyKey,
+      propertyKey
     );
   };
 }
@@ -63,13 +63,13 @@ export function ResourceOwnerIdGetter(resourceType: string) {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor,
+    descriptor: PropertyDescriptor
   ) {
     Reflect.defineMetadata(
       RESOURCE_OWNER_ID_GETTER_METADATA_KEY,
       resourceType,
       target,
-      propertyKey,
+      propertyKey
     );
   };
 }
@@ -78,13 +78,13 @@ export function CurrentUserOwnResource() {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor,
+    descriptor: PropertyDescriptor
   ) {
     Reflect.defineMetadata(
       CURRENT_USER_OWN_RESOURCE_METADATA_KEY,
       true,
       target,
-      propertyKey,
+      propertyKey
     );
   };
 }
@@ -93,7 +93,7 @@ export function Guard(action: AuthorizedAction, resourceType: string) {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor,
+    descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
 
@@ -101,7 +101,7 @@ export function Guard(action: AuthorizedAction, resourceType: string) {
       const authTokenParamIdx: number | undefined = Reflect.getOwnMetadata(
         AUTH_TOKEN_METADATA_KEY,
         target,
-        propertyKey,
+        propertyKey
       );
       const authToken =
         authTokenParamIdx != undefined ? args[authTokenParamIdx] : undefined;
@@ -112,7 +112,7 @@ export function Guard(action: AuthorizedAction, resourceType: string) {
       const resourceIdParamIdx: number | undefined = Reflect.getOwnMetadata(
         RESOURCE_ID_METADATA_KEY,
         target,
-        propertyKey,
+        propertyKey
       );
       const resourceId =
         resourceIdParamIdx != undefined ? args[resourceIdParamIdx] : undefined;
@@ -121,20 +121,20 @@ export function Guard(action: AuthorizedAction, resourceType: string) {
       const currentUserOwnResource: true | undefined = Reflect.getMetadata(
         CURRENT_USER_OWN_RESOURCE_METADATA_KEY,
         target,
-        propertyKey,
+        propertyKey
       );
       if (currentUserOwnResource != undefined) {
         resourceOwnerId = AuthService.instance.verify(authToken).userId;
       } else {
         const methods = Object.getOwnPropertyNames(target).filter(
-          (prop) => typeof target[prop] === 'function',
+          (prop) => typeof target[prop] === 'function'
         );
         let ownerIdGetterName: string | undefined = undefined;
         for (const method of methods) {
           const metadata = Reflect.getMetadata(
             RESOURCE_OWNER_ID_GETTER_METADATA_KEY,
             target,
-            method,
+            method
           );
           if (metadata === resourceType) {
             ownerIdGetterName = method;
@@ -155,14 +155,14 @@ export function Guard(action: AuthorizedAction, resourceType: string) {
         action,
         resourceOwnerId,
         resourceType,
-        resourceId,
+        resourceId
       );
       return originalMethod.apply(this, args);
     };
     SetMetadata(HAS_GUARD_DECORATOR_METADATA_KEY, true)(
       target,
       propertyKey,
-      descriptor,
+      descriptor
     );
     return descriptor;
   };

@@ -61,7 +61,7 @@ export class UsersService {
     private readonly usersPermissionService: UsersPermissionService,
     private readonly usersRegisterRequestService: UsersRegisterRequestService,
     private readonly avatarsService: AvatarsService,
-    private readonly prismaService: PrismaService,
+    private readonly prismaService: PrismaService
   ) {}
 
   private readonly passwordResetEmailValidSeconds = 10 * 60; // 10 minutes
@@ -115,7 +115,7 @@ export class UsersService {
   }
 
   async findUserRecordAndProfileRecordOrThrow(
-    userId: number,
+    userId: number
   ): Promise<[User, UserProfile]> {
     const userPromise = this.findUserRecordOrThrow(userId);
     const profilePromise = this.prismaService.userProfile.findUnique({
@@ -146,7 +146,7 @@ export class UsersService {
     type: UserRegisterLogType,
     email: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<void> {
     await this.prismaService.userRegisterLog.create({
       data: {
@@ -162,7 +162,7 @@ export class UsersService {
     type: UserResetPasswordLogType,
     userId: number | undefined,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<void> {
     await this.prismaService.userResetPasswordLog.create({
       data: {
@@ -177,14 +177,14 @@ export class UsersService {
   async sendRegisterEmailCode(
     email: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<void> {
     if (isEmail(email) == false) {
       await this.createUserRegisterLog(
         UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       throw new InvalidEmailAddressError(email);
     }
@@ -193,7 +193,7 @@ export class UsersService {
         UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       throw new InvalidEmailSuffixError(email, this.emailSuffixRule);
     }
@@ -206,7 +206,7 @@ export class UsersService {
         UserRegisterLogType.RequestFailDueToAlreadyRegistered,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       throw new EmailAlreadyRegisteredError(email);
     }
@@ -221,7 +221,7 @@ export class UsersService {
         UserRegisterLogType.RequestFailDueToSendEmailFailure,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       throw new EmailSendFailedError(email);
     }
@@ -230,7 +230,7 @@ export class UsersService {
       UserRegisterLogType.RequestSuccess,
       email,
       ip,
-      userAgent,
+      userAgent
     );
   }
 
@@ -257,7 +257,7 @@ export class UsersService {
     // todo: we should only use visible special characters
     // eslint-disable-next-line no-control-regex
     return /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[\x00-\x2F\x3A-\x40\x5B-\x60\x7B-\x7F]).{8,}$/.test(
-      password,
+      password
     );
   }
 
@@ -276,7 +276,7 @@ export class UsersService {
     email: string,
     emailCode: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<UserDto> {
     // todo: validate username, nickname, password, email, emailCode
     if (this.isValidUsername(username) == false) {
@@ -307,7 +307,7 @@ export class UsersService {
             `1. The user send two register email and verified them after that.\n` +
             `2. There is a bug in the code.\n` +
             `3. The database is corrupted.\n` +
-            `4. We are under attack!`,
+            `4. We are under attack!`
         );
       }
       // Verify whether the username is registered.
@@ -316,7 +316,7 @@ export class UsersService {
           UserRegisterLogType.FailDueToUserExistence,
           email,
           ip,
-          userAgent,
+          userAgent
         );
         throw new UsernameAlreadyRegisteredError(username);
       }
@@ -344,7 +344,7 @@ export class UsersService {
         UserRegisterLogType.Success,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       return {
         id: result.id,
@@ -361,7 +361,7 @@ export class UsersService {
         UserRegisterLogType.FailDueToWrongCodeOrExpired,
         email,
         ip,
-        userAgent,
+        userAgent
       );
       throw new CodeNotMatchError(email, emailCode);
     }
@@ -371,10 +371,11 @@ export class UsersService {
     userId: number,
     viewerId: number | undefined, // optional
     ip: string,
-    userAgent: string | undefined, // optional
+    userAgent: string | undefined // optional
   ): Promise<UserDto> {
-    const [user, profile] =
-      await this.findUserRecordAndProfileRecordOrThrow(userId);
+    const [user, profile] = await this.findUserRecordAndProfileRecordOrThrow(
+      userId
+    );
     const vieweeId = user.id;
     await this.prismaService.userProfileQueryLog.create({
       data: {
@@ -410,7 +411,7 @@ export class UsersService {
     username: string,
     password: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<[UserDto, string]> {
     const user = await this.findUserRecordByUsernameOrThrow(username);
     if (bcrypt.compareSync(password, user.hashedPassword) == false) {
@@ -439,7 +440,7 @@ export class UsersService {
   async sendResetPasswordEmail(
     email: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<void> {
     // Check email.
     if (isEmail(email) == false) {
@@ -458,7 +459,7 @@ export class UsersService {
         UserResetPasswordLogType.RequestFailDueToNoneExistentEmail,
         undefined,
         ip,
-        userAgent,
+        userAgent
       );
       throw new EmailNotFoundError(email);
     }
@@ -477,13 +478,13 @@ export class UsersService {
           },
         ],
       },
-      this.passwordResetEmailValidSeconds,
+      this.passwordResetEmailValidSeconds
     );
     try {
       await this.emailService.sendPasswordResetEmail(
         email,
         user.username,
-        token,
+        token
       );
     } catch {
       throw new EmailSendFailedError(email);
@@ -492,7 +493,7 @@ export class UsersService {
       UserResetPasswordLogType.RequestSuccess,
       user.id,
       ip,
-      userAgent,
+      userAgent
     );
   }
 
@@ -500,7 +501,7 @@ export class UsersService {
     token: string,
     newPassword: string,
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<void> {
     // Here, we do not need to check whether the token is valid.
     // If we check, then, if the token is invalid, it won't be logged.
@@ -511,7 +512,7 @@ export class UsersService {
         'modify',
         userId,
         'users/password:reset',
-        undefined,
+        undefined
       );
     } catch (e) {
       if (e instanceof PermissionDeniedError) {
@@ -519,10 +520,10 @@ export class UsersService {
           UserResetPasswordLogType.FailDueToInvalidToken,
           userId,
           ip,
-          userAgent,
+          userAgent
         );
         Logger.warn(
-          `Permission denied when reset password: token = "${token}", ip = "${ip}", userAgent = "${userAgent}"`,
+          `Permission denied when reset password: token = "${token}", ip = "${ip}", userAgent = "${userAgent}"`
         );
       }
       if (e instanceof TokenExpiredError) {
@@ -530,7 +531,7 @@ export class UsersService {
           UserResetPasswordLogType.FailDueToExpiredRequest,
           userId,
           ip,
-          userAgent,
+          userAgent
         );
       }
       throw e;
@@ -554,7 +555,7 @@ export class UsersService {
         UserResetPasswordLogType.FailDueToNoUser,
         userId,
         ip,
-        userAgent,
+        userAgent
       );
       throw new Error(
         `In an password reset attempt, the operation ` +
@@ -562,7 +563,7 @@ export class UsersService {
           `1. The user is deleted right after a password reset request.\n` +
           `2. There is a bug in the code.\n` +
           `3. The database is corrupted.\n` +
-          `4. We are under attack!`,
+          `4. We are under attack!`
       );
     }
     const salt = bcrypt.genSaltSync(10);
@@ -578,7 +579,7 @@ export class UsersService {
       UserResetPasswordLogType.Success,
       userId,
       ip,
-      userAgent,
+      userAgent
     );
   }
 
@@ -586,10 +587,11 @@ export class UsersService {
     userId: number,
     nickname: string,
     intro: string,
-    avatarId: number,
+    avatarId: number
   ): Promise<void> {
-    const [, profile] =
-      await this.findUserRecordAndProfileRecordOrThrow(userId);
+    const [, profile] = await this.findUserRecordAndProfileRecordOrThrow(
+      userId
+    );
     if ((await this.avatarsService.isAvatarExists(avatarId)) == false) {
       throw new AvatarNotFoundError(avatarId);
     }
@@ -609,7 +611,7 @@ export class UsersService {
 
   async getUniqueFollowRelationship(
     followerId: number,
-    followeeId: number,
+    followeeId: number
   ): Promise<UserFollowingRelationship | undefined> {
     let relationships =
       await this.prismaService.userFollowingRelationship.findMany({
@@ -621,7 +623,7 @@ export class UsersService {
     /* istanbul ignore if */
     if (relationships.length > 1) {
       Logger.warn(
-        `There are more than one follow relationship between user ${followerId} and user ${followeeId}. Automaticly clean them up...`,
+        `There are more than one follow relationship between user ${followerId} and user ${followeeId}. Automaticly clean them up...`
       );
       await this.prismaService.userFollowingRelationship.updateMany({
         where: {
@@ -645,7 +647,7 @@ export class UsersService {
 
   async addFollowRelationship(
     followerId: number,
-    followeeId: number,
+    followeeId: number
   ): Promise<void> {
     if (followerId == followeeId) {
       throw new FollowYourselfError();
@@ -658,7 +660,7 @@ export class UsersService {
     }
     const oldRelationship = await this.getUniqueFollowRelationship(
       followerId,
-      followeeId,
+      followeeId
     );
     if (oldRelationship != null) {
       throw new UserAlreadyFollowedError(followeeId);
@@ -673,11 +675,11 @@ export class UsersService {
 
   async deleteFollowRelationship(
     followerId: number,
-    followeeId: number,
+    followeeId: number
   ): Promise<void> {
     const relationship = await this.getUniqueFollowRelationship(
       followerId,
-      followeeId,
+      followeeId
     );
     if (relationship == undefined) {
       throw new UserNotFollowedYetError(followeeId);
@@ -699,7 +701,7 @@ export class UsersService {
     pageSize: number,
     viewerId: number | undefined, // optional
     ip: string,
-    userAgent: string | undefined, // optional
+    userAgent: string | undefined // optional
   ): Promise<[UserDto[], PageDto]> {
     if (firstFollowerId == undefined) {
       const relations =
@@ -713,7 +715,7 @@ export class UsersService {
       const DTOs = await Promise.all(
         relations.map((r) => {
           return this.getUserDtoById(r.followerId, viewerId, ip, userAgent);
-        }),
+        })
       );
       return PageHelper.PageStart(DTOs, pageSize, (item) => item.id);
     } else {
@@ -736,9 +738,11 @@ export class UsersService {
           orderBy: { followerId: 'asc' },
         });
       const DTOs = await Promise.all(
-        (await queriedRelationsPromise).map((r) => {
+        (
+          await queriedRelationsPromise
+        ).map((r) => {
           return this.getUserDtoById(r.followerId, viewerId, ip, userAgent);
-        }),
+        })
       );
       const prev = await prevRelationshipsPromise;
       return PageHelper.PageMiddle(
@@ -746,7 +750,7 @@ export class UsersService {
         DTOs,
         pageSize,
         (i) => i.followerId,
-        (i) => i.id,
+        (i) => i.id
       );
     }
   }
@@ -757,7 +761,7 @@ export class UsersService {
     pageSize: number,
     viewerId: number | undefined, // optional
     ip: string, // optional
-    userAgent: string | undefined, // optional
+    userAgent: string | undefined // optional
   ): Promise<[UserDto[], PageDto]> {
     if (firstFolloweeId == undefined) {
       const relations =
@@ -771,7 +775,7 @@ export class UsersService {
       const DTOs = await Promise.all(
         relations.map((r) => {
           return this.getUserDtoById(r.followeeId, viewerId, ip, userAgent);
-        }),
+        })
       );
       return PageHelper.PageStart(DTOs, pageSize, (item) => item.id);
     } else {
@@ -794,9 +798,11 @@ export class UsersService {
           orderBy: { followeeId: 'asc' },
         });
       const DTOs = await Promise.all(
-        (await queriedRelationsPromise).map((r) => {
+        (
+          await queriedRelationsPromise
+        ).map((r) => {
           return this.getUserDtoById(r.followeeId, viewerId, ip, userAgent);
-        }),
+        })
       );
       const prev = await prevRelationshipsPromise;
       return PageHelper.PageMiddle(
@@ -804,7 +810,7 @@ export class UsersService {
         DTOs,
         pageSize,
         (i) => i.followeeId,
-        (i) => i.id,
+        (i) => i.id
       );
     }
   }
@@ -831,7 +837,7 @@ export class UsersService {
 
   async isUserFollowUser(
     followerId: number | undefined,
-    followeeId: number | undefined,
+    followeeId: number | undefined
   ): Promise<boolean> {
     if (followerId == undefined || followeeId == undefined) return false;
     const result = await this.prismaService.userFollowingRelationship.count({
