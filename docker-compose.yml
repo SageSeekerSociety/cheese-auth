@@ -9,8 +9,15 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/status || exit 1"]
+      start_period: 180s
+      start_interval: 5s
+      interval: 1m
+      timeout: 10s
+      retries: 3
     ports:
-      - "8080:3000"
+      - "8080:8080"
 
   database:
     image: postgres:16.2

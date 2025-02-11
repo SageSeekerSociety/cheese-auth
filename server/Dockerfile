@@ -1,5 +1,5 @@
 FROM node:23-slim
-RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get update -y && apt-get install -y openssl curl
 
 WORKDIR /app
 COPY . ./
@@ -9,11 +9,6 @@ ENV PNPM_HOME=/app/.pnpm
 ENV PNPM_CACHE=/app/.pnpm-cache
 ENV PATH="${PNPM_HOME}:$PATH"
 RUN corepack enable pnpm
-
-# Setup an app user so the container doesn't run as the root user
-RUN useradd app
-RUN chown -R app /app
-USER app
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm prisma generate

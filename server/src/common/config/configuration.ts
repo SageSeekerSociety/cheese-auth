@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 
 export default () => {
   return {
-    port: parseInt(process.env.PORT || '3000', 10),
+    port: parseInt(process.env.PORT || '8080', 10),
     elasticsearch: {
       node: process.env.ELASTICSEARCH_NODE,
       maxRetries: parseInt(process.env.ELASTICSEARCH_MAX_RETRIES || '3', 10),

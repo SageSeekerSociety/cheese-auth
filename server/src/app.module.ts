@@ -8,6 +8,7 @@ import { BaseErrorExceptionFilter } from './common/error/error-filter';
 import { EnsureGuardInterceptor } from './common/interceptor/ensure-guard.interceptor';
 import { TokenValidateInterceptor } from './common/interceptor/token-validate.interceptor';
 import { UsersModule } from './users/users.module';
+import { StatusModule } from './common/status/status.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ load: [configuration] }),
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module';
       rootPath: process.env.FILE_UPLOAD_PATH,
       serveRoot: '/static',
     }),
+    StatusModule,
   ],
   controllers: [],
   providers: [

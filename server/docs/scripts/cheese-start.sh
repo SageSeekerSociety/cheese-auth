@@ -38,8 +38,8 @@ sudo docker restart --time 0 postgres
 sudo docker run -d \
     --name cheese_legacy \
     --network cheese_network \
-    -p 3000:3000 \
-    -e PORT=3000 \
+    -p 8080:8080 \
+    -e PORT=8080 \
     -e JWT_SECRET="test-secret" \
     -e PRISMA_DATABASE_URL="postgresql://postgres:postgres@postgres:5432/postgres?schema=public&connection_limit=16" \
     -e ELASTICSEARCH_NODE=http://elasticsearch:9200/ \
