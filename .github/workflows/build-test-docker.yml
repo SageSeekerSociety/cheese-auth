@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: SageSeekerSociety/cheese-backend-dev
+  IMAGE_NAME: SageSeekerSociety/cheese-auth
 
 jobs:
   build-and-push-image:
@@ -45,7 +45,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          target: dev
+          # target: dev
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -56,41 +56,41 @@ jobs:
       - name: Create env file
         run: cp sample.env .env
 
-      - name: set backend image tag
-        run: echo "BACKEND_DEV_VERSION=${{ steps.meta.outputs.version }}" >> "$GITHUB_ENV"
+      # - name: set cheese-auth image tag
+      #   run: echo "BACKEND_DEV_VERSION=${{ steps.meta.outputs.version }}" >> "$GITHUB_ENV"
 
       - name: Start compose
-        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --no-build -d
+        run: docker compose -f docker-compose.yml up --no-build -d
 
       # See: https://remarkablemark.org/blog/2022/05/12/github-actions-postgresql-increase-max-connections-and-shared-buffers/
       # See: https://stackoverflow.com/questions/70673766/how-to-increase-max-connection-in-github-action-postgres
       - name: Increase PostgreSQL max_connections
         run: |
-          docker exec -i cheese-backend-database-1 bash << EOF
+          docker exec -i cheese-auth-database-1 bash << EOF
             sed -i -e 's/max_connections = 100/max_connections = 1000/' /var/lib/postgresql/data/postgresql.conf
             sed -i -e 's/shared_buffers = 128MB/shared_buffers = 2GB/' /var/lib/postgresql/data/postgresql.conf
           EOF
-          docker restart --time 0 cheese-backend-database-1
+          docker restart --time 0 cheese-auth-database-1
 
       - name: Check Schema up to Date
         run: |
-          docker compose exec backend cp prisma/schema.prisma prisma/schema.prisma.origin
-          docker compose exec backend pnpm build-prisma
-          docker compose exec backend diff prisma/schema.prisma prisma/schema.prisma.origin
+          docker compose exec cheese-auth cp prisma/schema.prisma prisma/schema.prisma.origin
+          docker compose exec cheese-auth pnpm build-prisma
+          docker compose exec cheese-auth diff prisma/schema.prisma prisma/schema.prisma.origin
 
       - name: Deploy migrations to Database
-        run: docker compose exec backend pnpm prisma migrate deploy
+        run: docker compose exec cheese-auth pnpm prisma migrate deploy
 
       - name: Check Prisma Structures Sync With Database
         run: |
-          docker compose exec backend pnpm prisma migrate diff \
+          docker compose exec cheese-auth pnpm prisma migrate diff \
           --from-schema-datasource prisma/schema.prisma \
           --to-schema-datamodel prisma/schema.prisma \
           --exit-code
 
       - name: Try to Start Application
         run: |
-          docker compose exec backend bash -c "
+          docker compose exec cheese-auth bash -c "
           pnpm start | tee output &
           while true; do
               sleep 1
@@ -108,4 +108,4 @@ jobs:
           "
 
       - name: Run Test
-        run: docker compose exec backend pnpm run test:cov
+        run: docker compose exec cheese-auth pnpm run test:cov

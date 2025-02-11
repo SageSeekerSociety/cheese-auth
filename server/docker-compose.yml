@@ -1,0 +1,32 @@
+services:
+  cheese-auth:
+    image: ghcr.io/sageseekersociety/cheese-auth
+    env_file: .env
+    volumes:
+      - type: volume
+        source: cheese_backend_uploads
+        target: /app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "8080:3000"
+
+  database:
+    image: postgres:16.2
+    env_file: .env
+    volumes:
+      - type: volume
+        source: cheese_db_pg
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      start_period: 180s
+      start_interval: 5s
+      interval: 1m
+      timeout: 10s
+      retries: 3
+  
+volumes:
+  cheese_backend_uploads:
+  cheese_db_pg:

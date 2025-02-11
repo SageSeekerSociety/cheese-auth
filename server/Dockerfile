@@ -1,43 +1,19 @@
-FROM node:23 AS base
+FROM node:23-slim
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="${PNPM_HOME}:$PATH"
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg
-RUN corepack enable
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-COPY .husky/install.mjs ./.husky/
-COPY prisma ./prisma/
+RUN corepack enable pnpm
+RUN apt-get update -y && apt-get install -y openssl
 
-FROM base AS dev-deps
 WORKDIR /app
+COPY . ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm prisma generate
 
-FROM dev-deps AS dev
-WORKDIR /app
-COPY . ./
-EXPOSE 8000
-CMD ["tail", "-f", "/dev/null"]
+ENV PORT=8080
+EXPOSE 8080
 
-FROM dev-deps AS prod-deps
-WORKDIR /app
-ENV NODE_ENV="production"
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm prune --prod --ignore-scripts
-
-# note that we need to use development deps to build the product
-FROM dev-deps AS prod-build
-WORKDIR /app
-COPY . ./
-RUN pnpm run build
-
-FROM node:23-slim AS prod
-ENV NODE_ENV="production"
-RUN apt-get update && apt-get install -y openssl
-WORKDIR /app
-COPY . ./
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-build /app/dist ./dist
-
-EXPOSE 8000
-CMD ["node", "dist/main"]
+# Setup an app user so the container doesn't run as the root user
+RUN useradd app
+USER app
+CMD ["bash", "-c", "if [ ! -f \"FLAG_INIT\" ]; then touch FLAG_INIT \n pnpm prisma db push \n fi \n pnpm start"]
