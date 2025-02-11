@@ -34,7 +34,7 @@ if (process.env.EMAILTEST_ENABLE == 'true') {
       await emailService.sendPasswordResetEmail(
         receiver,
         'test_username',
-        'a_jwt_token_that_is_very_very_very_very_very_long',
+        'a_jwt_token_that_is_very_very_very_very_very_long'
       );
     });
 

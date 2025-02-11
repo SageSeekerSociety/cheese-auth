@@ -33,12 +33,12 @@ export class PermissionDeniedError extends BaseError {
     public readonly action: AuthorizedAction,
     public readonly resourceOwnerId?: number,
     public readonly resourceType?: string,
-    public readonly resourceId?: number,
+    public readonly resourceId?: number
   ) {
     super(
       'PermissionDeniedError',
       `The attempt to perform action '${action}' on resource (resourceOwnerId: ${resourceOwnerId}, resourceType: ${resourceType}, resourceId: ${resourceId}) is not permitted by the given token.`,
-      403,
+      403
     );
   }
 }
@@ -60,7 +60,7 @@ export class RefreshTokenAlreadyUsedError extends BaseError {
     super(
       'RefreshTokenAlreadyUsedError',
       'The refresh token has already been used. A refresh token can only be used once.',
-      401,
+      401
     );
   }
 }
@@ -70,7 +70,7 @@ export class NotRefreshTokenError extends BaseError {
     super(
       'NotRefreshTokenError',
       'The token is not a refresh token. A refresh token is required.',
-      401,
+      401
     );
   }
 }

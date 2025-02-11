@@ -17,13 +17,13 @@ export class EmailService {
   constructor(
     private readonly mailerService: MailerService,
     private readonly emailRuleService: EmailRuleService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   async sendPasswordResetEmail(
     email: string,
     username: string,
-    token: string,
+    token: string
   ): Promise<void> {
     await this.emailRuleService.emailPolicyEnsure(email);
     await this.mailerService.sendMail({

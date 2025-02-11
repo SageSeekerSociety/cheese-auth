@@ -14,20 +14,17 @@ export class InvalidEmailAddressError extends BaseError {
     super(
       'InvalidEmailAddressError',
       `Invalid email address: ${email}. Email should look like someone@example.com`,
-      422,
+      422
     );
   }
 }
 
 export class InvalidEmailSuffixError extends BaseError {
-  constructor(
-    public readonly email: string,
-    public readonly rule: string,
-  ) {
+  constructor(public readonly email: string, public readonly rule: string) {
     super(
       'InvalidEmailSuffixError',
       `Invalid email suffix: ${email}. ${rule}`,
-      422,
+      422
     );
   }
 }
@@ -37,7 +34,7 @@ export class EmailAlreadyRegisteredError extends BaseError {
     super(
       'EmailAlreadyRegisteredError',
       `Email already registered: ${email}`,
-      409,
+      409
     );
   }
 }
@@ -49,27 +46,21 @@ export class EmailSendFailedError extends BaseError {
 }
 
 export class InvalidUsernameError extends BaseError {
-  constructor(
-    public readonly username: string,
-    public readonly rule: string,
-  ) {
+  constructor(public readonly username: string, public readonly rule: string) {
     super(
       'InvalidUsernameError',
       `Invalid username: ${username}. ${rule}`,
-      422,
+      422
     );
   }
 }
 
 export class InvalidNicknameError extends BaseError {
-  constructor(
-    public readonly nickname: string,
-    public readonly rule: string,
-  ) {
+  constructor(public readonly nickname: string, public readonly rule: string) {
     super(
       'InvalidNicknameError',
       `Invalid nickname: ${nickname}. ${rule}`,
-      422,
+      422
     );
   }
 }
@@ -85,16 +76,13 @@ export class UsernameAlreadyRegisteredError extends BaseError {
     super(
       'UsernameAlreadyRegisteredError',
       `Username already registered: ${username}`,
-      409,
+      409
     );
   }
 }
 
 export class CodeNotMatchError extends BaseError {
-  constructor(
-    public readonly email: string,
-    public readonly code: string,
-  ) {
+  constructor(public readonly email: string, public readonly code: string) {
     super('CodeNotMatchError', `Code not match: ${email}, ${code}`, 422);
   }
 }
@@ -110,7 +98,7 @@ export class UsernameNotFoundError extends BaseError {
     super(
       'UsernameNotFoundError',
       `User with username ${username} not found`,
-      404,
+      404
     );
   }
 }
@@ -120,7 +108,7 @@ export class PasswordNotMatchError extends BaseError {
     super(
       'PasswordNotMatchError',
       `Password not match for user ${username}`,
-      401,
+      401
     );
   }
 }
@@ -136,7 +124,7 @@ export class UserNotFollowedYetError extends BaseError {
     super(
       'UserNotFollowedYetError',
       `User with id ${followeeId} is not followed yet.`,
-      422,
+      422
     );
   }
 }
@@ -152,7 +140,7 @@ export class UserAlreadyFollowedError extends BaseError {
     super(
       'UserAlreadyFollowedError',
       `User with id ${followeeId} already followed.`,
-      422,
+      422
     );
   }
 }

@@ -1,4 +1,4 @@
-name: Build and Test Dev Docker
+name: Build and Test Docker
 
 on: 
   push:
@@ -8,6 +8,7 @@ on:
     branches:
       - dev
   workflow_dispatch:
+  merge_group:
 
 env:
   REGISTRY: ghcr.io
@@ -44,8 +45,7 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          # target: dev
+          context: server
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -56,11 +56,29 @@ jobs:
       - name: Create env file
         run: cp sample.env .env
 
-      # - name: set cheese-auth image tag
-      #   run: echo "BACKEND_DEV_VERSION=${{ steps.meta.outputs.version }}" >> "$GITHUB_ENV"
+      - name: set cheese-auth image tag
+        run: echo "CHEESE_AUTH_TAG=${{ steps.meta.outputs.version }}" >> "$GITHUB_ENV"
 
       - name: Start compose
-        run: docker compose -f docker-compose.yml up --no-build -d
+        run: |
+          docker compose --file docker-compose.yml up --no-build --detach
+
+          # Check the health of all services, wait for them to become healthy
+          max_tries=10
+          tries=0
+          until [ $(docker compose ps | grep -c 'healthy') -eq \
+              $(docker compose ps -q | wc -l) ] || [ $tries -eq $max_tries ]; do
+            echo "Waiting for all services to become healthy... (try $((tries+1))/$max_tries)"
+            sleep 5
+            tries=$((tries+1))
+          done
+
+          if [ $tries -eq $max_tries ]; then
+            echo "Services did not become healthy after $max_tries tries."
+            docker compose ps
+            docker compose logs cheese-auth
+            exit 1
+          fi
 
       # See: https://remarkablemark.org/blog/2022/05/12/github-actions-postgresql-increase-max-connections-and-shared-buffers/
       # See: https://stackoverflow.com/questions/70673766/how-to-increase-max-connection-in-github-action-postgres
@@ -71,41 +89,6 @@ jobs:
             sed -i -e 's/shared_buffers = 128MB/shared_buffers = 2GB/' /var/lib/postgresql/data/postgresql.conf
           EOF
           docker restart --time 0 cheese-auth-database-1
-
-      - name: Check Schema up to Date
-        run: |
-          docker compose exec cheese-auth cp prisma/schema.prisma prisma/schema.prisma.origin
-          docker compose exec cheese-auth pnpm build-prisma
-          docker compose exec cheese-auth diff prisma/schema.prisma prisma/schema.prisma.origin
-
-      - name: Deploy migrations to Database
-        run: docker compose exec cheese-auth pnpm prisma migrate deploy
-
-      - name: Check Prisma Structures Sync With Database
-        run: |
-          docker compose exec cheese-auth pnpm prisma migrate diff \
-          --from-schema-datasource prisma/schema.prisma \
-          --to-schema-datamodel prisma/schema.prisma \
-          --exit-code
-
-      - name: Try to Start Application
-        run: |
-          docker compose exec cheese-auth bash -c "
-          pnpm start | tee output &
-          while true; do
-              sleep 1
-              if grep -q \"Nest application successfully started\" output; then
-                  echo \"Detected 'Nest application successfully started'. Stopping pnpm...\"
-                  pid=$(netstat -nlp | grep 3000 | awk '{print $7}' | awk -F'/' '{print $1}')
-                  kill $pid
-                  break
-              fi
-              if grep -q \"Command failed\" output; then
-                  echo \"Nest application failed to start.\"
-                  exit -1
-              fi
-          done
-          "
 
       - name: Run Test
         run: docker compose exec cheese-auth pnpm run test:cov

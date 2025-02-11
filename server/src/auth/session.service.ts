@@ -21,7 +21,7 @@ import { Authorization } from './definitions';
 export class SessionService {
   constructor(
     private readonly authService: AuthService,
-    private readonly prismaService: PrismaService,
+    private readonly prismaService: PrismaService
   ) {}
 
   private readonly defaultSessionValidSeconds = 60 * 60 * 24 * 30 * 12;
@@ -30,7 +30,7 @@ export class SessionService {
 
   private getRefreshAuthorization(
     userId: number,
-    sessionId: number,
+    sessionId: number
   ): Authorization {
     return {
       userId: userId,
@@ -55,7 +55,7 @@ export class SessionService {
     // The refresh token is valid for refreshTokenValidSeconds seconds.
     // By default, it is valid for defaultRefreshTokenValidSeconds seconds.
     refreshTokenValidSeconds: number = this.defaultRefreshTokenValidSeconds,
-    sessionValidSeconds: number = this.defaultSessionValidSeconds,
+    sessionValidSeconds: number = this.defaultSessionValidSeconds
   ): Promise<string> {
     const session = await this.prismaService.session.create({
       data: {
@@ -68,7 +68,7 @@ export class SessionService {
     });
     return this.authService.sign(
       this.getRefreshAuthorization(userId, session.id),
-      refreshTokenValidSeconds,
+      refreshTokenValidSeconds
     );
   }
 
@@ -79,7 +79,7 @@ export class SessionService {
   async refreshSession(
     oldRefreshToken: string,
     refreshTokenValidSeconds: number = this.defaultRefreshTokenValidSeconds,
-    accessTokenValidSeconds: number = this.defaultAccessTokenValidSeconds,
+    accessTokenValidSeconds: number = this.defaultAccessTokenValidSeconds
   ): Promise<[string, string]> {
     const auth = this.authService.verify(oldRefreshToken);
     if (
@@ -95,7 +95,7 @@ export class SessionService {
       'other',
       undefined,
       'auth/session:refresh',
-      sessionId,
+      sessionId
     );
     let session = await this.prismaService.session.findUnique({
       where: { id: sessionId },
@@ -109,7 +109,7 @@ export class SessionService {
           `1. There is a bug in the code.\n` +
           `2. The database is corrupted.\n` +
           `3. We are under attack.\n` +
-          `token: ${oldRefreshToken}`,
+          `token: ${oldRefreshToken}`
       );
     }
     if (new Date() > session.validUntil) {
@@ -126,7 +126,7 @@ export class SessionService {
     const authorization = JSON.parse(session.authorization) as Authorization;
     const refreshAuthorization = this.getRefreshAuthorization(
       session.userId,
-      session.id,
+      session.id
     );
 
     // get the current time before signing to ensure
@@ -134,11 +134,11 @@ export class SessionService {
     const lastRefreshedAt = new Date().getTime();
     const newRefreshToken = this.authService.sign(
       refreshAuthorization,
-      refreshTokenValidSeconds,
+      refreshTokenValidSeconds
     );
     const accessToken = this.authService.sign(
       authorization,
-      accessTokenValidSeconds,
+      accessTokenValidSeconds
     );
 
     // Update lastRefreshedAt
@@ -175,7 +175,7 @@ export class SessionService {
       'other',
       undefined,
       'auth/session:revoke',
-      sessionId,
+      sessionId
     );
     const ret = await this.prismaService.session.update({
       where: { id: sessionId },
@@ -190,7 +190,7 @@ export class SessionService {
           `1. There is a bug in the code.\n` +
           `2. The database is corrupted.\n` +
           `3. We are under attack.\n` +
-          `token: ${refreshToken}`,
+          `token: ${refreshToken}`
       );
     }
   }

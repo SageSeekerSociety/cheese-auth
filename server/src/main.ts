@@ -10,7 +10,7 @@ async function bootstrap() {
   const corsOptions = {
     origin:
       process.env.CORS_ORIGINS?.split(',') ??
-      (IS_DEV ? ['http://localhost:3000'] : []),
+      (IS_DEV ? ['http://localhost:8080'] : []),
     methods: process.env.CORS_METHODS ?? 'GET,POST,PUT,PATCH,DELETE',
     allowedHeaders: process.env.CORS_HEADERS ?? 'Content-Type,Authorization',
     credentials: process.env.CORS_CREDENTIALS === 'true',

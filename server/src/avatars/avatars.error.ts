@@ -11,7 +11,7 @@ export class CorrespondentFileNotExistError extends BaseError {
     super(
       'CorrespondentFileNotExistError',
       `File of Avatar ${avatarId} Not Found`,
-      404,
+      404
     );
   }
 }
