@@ -1,0 +1,663 @@
+openapi: "3.0.2"
+info:
+  title: Cheese Community API
+  version: "1.0"
+servers:
+  - url: http://localhost:7777/api/{version}
+    description: Local server
+    variables:
+      version:
+        default: v1
+components:
+  parameters:
+    userId:
+      name: userId
+      in: path
+      description: 用户 ID
+      required: true
+      schema:
+        type: integer
+        format: int64
+    page_start:
+      name: page_start
+      in: query
+      description: 该页第一个 item 的 ID，留空即为从头开始
+      schema:
+        type: integer
+        format: int64
+    page_size:
+      name: page_size
+      in: query
+      description: 每页 item 数量
+      schema:
+        type: integer
+        format: int64
+        default: 20
+  securitySchemes:
+    bearerAuth:
+      description: The access token is used in this way.
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    bearerAuth2:
+      type: apiKey
+      description: The refresh token is used in this way.
+      name: REFRESH_TOKEN
+      in: cookie
+  schemas:
+    CommonResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          default: 0
+          description: 错误码，0表示成功，其他表示失败
+        message:
+          type: string
+          default: ""
+          description: 错误信息，成功时为空字符串
+      required:
+        - code
+        - message
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 用户 ID
+          minimum: 1
+        username:
+          type: string
+          description: 用户名
+          example: "cheese"
+        nickname:
+          type: string
+          description: 昵称
+          example: "芝士"
+        avatarId:
+          type: integer
+          description: 头像 id
+        intro:
+          type: string
+          description: 个人简介
+          default: "This user has not set an introduction yet."
+        follow_count:
+          type: integer
+          format: int64
+          description: 关注用户的数量
+          minimum: 0
+          example: 114
+        fans_count:
+          type: integer
+          format: int64
+          description: 粉丝数量
+          minimum: 0
+          example: 514
+        question_count:
+          type: integer
+          format: int64
+          description: 提问数量
+          minimum: 0
+          example: 1919
+        answer_count:
+          type: integer
+          format: int64
+          description: 回答数量
+          minimum: 0
+          example: 810
+        is_follow:
+          type: boolean
+          description: 当前登录用户是否关注该用户
+      required:
+        - id
+        - username
+        - nickname
+        - avatarId
+        - intro
+        - follow_count
+        - fans_count
+        - question_count
+        - answer_count
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    LoginResponse:
+      allOf:
+        - $ref: "#/components/schemas/CommonResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                user:
+                  $ref: "#/components/schemas/User"
+              required:
+                - accessToken
+                - user
+          required:
+            - data
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        nickname:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        emailCode:
+          type: string
+      required:
+        - username
+        - nickname
+        - password
+        - email
+        - emailCode
+    RegisterResponse:
+      allOf:
+        - $ref: "#/components/schemas/CommonResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                user:
+                  $ref: "#/components/schemas/User"
+              required:
+                - accessToken
+                - user
+          required:
+            - data
+    Page:
+      type: object
+      description: 分页信息
+      properties:
+        page_start:
+          type: integer
+          format: int64
+          description: 该页第一个 item 的 ID
+        page_size:
+          type: integer
+          format: int64
+          description: 每页 item 数量
+        has_prev:
+          type: boolean
+          description: 是否有上一页
+        prev_start:
+          type: integer
+          format: int64
+          description: 上一页第一个 item 的 ID
+        has_more:
+          type: boolean
+          description: 是否有下一页
+        next_start:
+          type: integer
+          format: int64
+          description: 下一页第一个 item 的 ID
+paths:
+  /users:
+    post:
+      summary: 用户注册
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          headers:
+            Set-Cookie:
+              description: "refresh token"
+              schema:
+                type: string
+                example: "RefreshToken=...; Secure; HttpOnly; SameSite=Strict; Path=/users/auth/; Expires=Sat, 01 Jan 2025 00:00:00 GMT"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+  /users/auth/login:
+    post:
+      summary: 用户登录
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: "refresh token"
+              schema:
+                type: string
+                example: "RefreshToken=...; Secure; HttpOnly; SameSite=Strict; Path=/users/auth; Expires=Sat, 01 Jan 2025 00:00:00 GMT"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /users/auth/refresh-token:
+    post:
+      summary: 用户刷新 token
+      operationId: refresh-access-token
+      security:
+        - REFRESH_TOKEN: []
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: "refresh token"
+              schema:
+                type: string
+                example: "RefreshToken=...; Secure; HttpOnly; SameSite=Strict; Path=/users/auth; Expires=Sat, 01 Jan 2025 00:00:00 GMT"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                        required:
+                          - accessToken
+                    required:
+                      - data
+  /users/auth/logout:
+    post:
+      summary: 用户退出登录
+      operationId: logout
+      security:
+        - REFRESH_TOKEN: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommonResponse"
+
+  /users/verify/email:
+    post:
+      summary: 发送邮箱验证码
+      operationId: verifyEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommonResponse"
+  /users/recover/password/request:
+    post:
+      summary: 重置密码请求
+      operationId: recoverPasswordRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommonResponse"
+  /users/recover/password/verify:
+    post:
+      summary: 验证 Token 并重置密码
+      operationId: recoverPasswordVerify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                new_password:
+                  type: string
+              required:
+                - token
+                - new_password
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommonResponse"
+  /users/{userId}:
+    get:
+      summary: 获取用户信息
+      operationId: getUserInfo
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                    required:
+                      - data
+    put:
+      summary: 更新用户信息
+      operationId: updateUserInfo
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                intro:
+                  type: string
+                avatarId:
+                  type: integer
+                  format: int64
+              required:
+                - nickname
+                - intro
+                - avatarId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommonResponse"
+  /users/{userId}/followers:
+    get:
+      summary: 获取用户粉丝列表
+      operationId: getUserFollowers
+      parameters:
+        - $ref: "#/components/parameters/userId"
+        - $ref: "#/components/parameters/page_start"
+        - $ref: "#/components/parameters/page_size"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/User"
+                          page:
+                            $ref: "#/components/schemas/Page"
+                    required:
+                      - data
+    post:
+      summary: 关注用户
+      operationId: followUser
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          follow_count:
+                            type: integer
+                            description: 新的关注者数量
+                        required:
+                          - follow_count
+                    required:
+                      - data
+    delete:
+      summary: 取消关注用户
+      operationId: unfollowUser
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          follow_count:
+                            type: integer
+                            description: 新的关注者数量
+                        required:
+                          - follow_count
+                    required:
+                      - data
+  /users/{userId}/follow/users:
+    get:
+      summary: 获取用户关注的用户列表
+      operationId: getUserFollowUsers
+      parameters:
+        - $ref: "#/components/parameters/userId"
+        - $ref: "#/components/parameters/page_start"
+        - $ref: "#/components/parameters/page_size"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/User"
+                          page:
+                            $ref: "#/components/schemas/Page"
+                    required:
+                      - data
+  /avatars:
+    get:
+      summary: Get available avatarIds
+      operationId: getAvailableAvatarIds
+      parameters:
+        - name: type
+          in: query
+          description: Avatar type
+          schema:
+            type: string
+            enum:
+              - predefined
+            default: predefined
+      responses:
+        "200":
+          description: Get available avatarIds successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      avatarIds:
+                        type: array
+                        items:
+                          type: number
+                          format: int64
+                        description: Available avatarIds
+    post:
+      summary: Upload an avatar
+      operationId: uploadAvatar
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: The avatar image to upload
+      responses:
+        "201":
+          description: Upload avatar successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    description: Unique identifier for the uploaded avatar
+  /avatars/default:
+    get:
+      summary: Get default avatar
+      operationId: getDefaultAvata
+      responses:
+        "200":
+          description: Get default avatar successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+  /avatars/{id}:
+    get:
+      summary: Get an avatar by id
+      operationId: getAvatar
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the uploaded avatar
+          schema:
+            type: number
+            format: int64
+            minimum: 1
+      responses:
+        "200":
+          description: get avatar successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+  /avatars/default/id:
+    get:
+      summary: Get default avatar id
+      operationId: getDefaultAvatarId
+      responses:
+        '200':
+          description: Get default avatarId successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      avatarId:
+                        type: number
+                        description: Default avatarId
+  /avatars/predefined/id:
+    get:
+      summary: Get predefined avatarIds
+      operationId: getPreDefinedIds
+      responses:
+        '200':
+          description: Get  Pre Defined AvatarIds successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      avatarIds:
+                        type: array
+                        items:
+                          type: integer
+                          format: int64
+                          description: Predefined AvatarIds
