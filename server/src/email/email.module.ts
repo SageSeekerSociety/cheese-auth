@@ -22,7 +22,7 @@ import { ConfigModule } from '@nestjs/config';
         host: process.env.EMAIL_SMTP_HOST,
         port: parseInt(
           process.env.EMAIL_SMTP_PORT ||
-            (process.env.EMAIL_SMTP_SSL_ENABLE === 'true' ? '587' : '25')
+            (process.env.EMAIL_SMTP_SSL_ENABLE === 'true' ? '587' : '25'),
         ),
         secure: process.env.EMAIL_SMTP_SSL_ENABLE,
         auth: {

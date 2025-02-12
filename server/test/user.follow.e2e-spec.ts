@@ -18,7 +18,7 @@ describe('Following Submodule of User Module', () => {
   const MockedEmailService = <jest.Mock<EmailService>>EmailService;
   const TestUsername = `TestUser-${Math.floor(Math.random() * 10000000000)}`;
   const TestEmail = `test-${Math.floor(
-    Math.random() * 10000000000
+    Math.random() * 10000000000,
   )}@ruc.edu.cn`;
   let TestToken: string;
   let TestUserId: number;
@@ -88,10 +88,10 @@ describe('Following Submodule of User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveBeenCalledWith(TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -127,7 +127,7 @@ describe('Following Submodule of User Module', () => {
 
     it('should return AuthenticationRequiredError', async () => {
       const respond = await request(app.getHttpServer()).post(
-        `/users/${tempUserIds[0]}/followers`
+        `/users/${tempUserIds[0]}/followers`,
       );
       //.set('User-Agent', 'PostmanRuntime/7.26.8')
       expect(respond.body.message).toMatch(/^AuthenticationRequiredError: /);
@@ -296,7 +296,7 @@ describe('Following Submodule of User Module', () => {
 
       const respond4 = await request(app.getHttpServer())
         .get(
-          `/users/${TestUserId}/followers?page_start=${tempUserIds[3]}&page_size=3`
+          `/users/${TestUserId}/followers?page_start=${tempUserIds[3]}&page_size=3`,
         )
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .set('authorization', 'Bearer ' + TestToken)
@@ -335,7 +335,7 @@ describe('Following Submodule of User Module', () => {
 
       const respond2 = await request(app.getHttpServer())
         .get(
-          `/users/${TestUserId}/follow/users?page_start=${tempUserIds[0]}&page_size=1`
+          `/users/${TestUserId}/follow/users?page_start=${tempUserIds[0]}&page_size=1`,
         )
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .set('authorization', 'Bearer ' + TestToken);
@@ -353,7 +353,7 @@ describe('Following Submodule of User Module', () => {
 
       const respond3 = await request(app.getHttpServer())
         .get(
-          `/users/${TestUserId}/follow/users?page_start=${tempUserIds[2]}&page_size=2`
+          `/users/${TestUserId}/follow/users?page_start=${tempUserIds[2]}&page_size=2`,
         )
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .set('authorization', 'Bearer ' + TestToken);

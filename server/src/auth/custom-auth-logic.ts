@@ -6,7 +6,7 @@ export type CustomAuthLogicHandler = (
   resourceOwnerId?: number,
   resourceType?: string,
   resourceId?: number,
-  customLogicData?: any
+  customLogicData?: any,
 ) => Promise<boolean>;
 
 export class CustomAuthLogics {
@@ -27,7 +27,7 @@ export class CustomAuthLogics {
     resourceOwnerId?: number,
     resourceType?: string,
     resourceId?: number,
-    customLogicData?: any
+    customLogicData?: any,
   ): Promise<boolean> {
     const handler = this.logics.get(name);
     if (!handler) {
@@ -39,7 +39,7 @@ export class CustomAuthLogics {
       resourceOwnerId,
       resourceType,
       resourceId,
-      customLogicData
+      customLogicData,
     );
   }
 }

@@ -18,7 +18,7 @@ describe('Profile Submodule of User Module', () => {
   const MockedEmailService = <jest.Mock<EmailService>>EmailService;
   const TestUsername = `TestUser-${Math.floor(Math.random() * 10000000000)}`;
   const TestEmail = `test-${Math.floor(
-    Math.random() * 10000000000
+    Math.random() * 10000000000,
   )}@ruc.edu.cn`;
   let TestToken: string;
   let TestUserId: number;
@@ -61,10 +61,10 @@ describe('Profile Submodule of User Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveBeenCalledWith(TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -191,7 +191,7 @@ describe('Profile Submodule of User Module', () => {
     });
     it('should return AuthenticationRequiredError', async () => {
       const respond = await request(app.getHttpServer()).get(
-        `/users/${TestUserId}`
+        `/users/${TestUserId}`,
       );
       expect(respond.body.message).toMatch(/^AuthenticationRequiredError: /);
       expect(respond.status).toBe(401);

@@ -40,16 +40,16 @@ describe('Users Module', () => {
 
   it('should return UserIdNotFoundError', async () => {
     await expect(usersService.addFollowRelationship(-1, 1)).rejects.toThrow(
-      new UserIdNotFoundError(-1)
+      new UserIdNotFoundError(-1),
     );
     await expect(usersService.addFollowRelationship(1, -1)).rejects.toThrow(
-      new UserIdNotFoundError(-1)
+      new UserIdNotFoundError(-1),
     );
   });
 
   it('should return UserIdNotFoundError', async () => {
     await expect(
-      usersService.updateUserProfile(-1, 'nick', 'int', 1)
+      usersService.updateUserProfile(-1, 'nick', 'int', 1),
     ).rejects.toThrow(new UserIdNotFoundError(-1));
   });
 

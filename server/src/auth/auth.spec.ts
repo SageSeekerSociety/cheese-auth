@@ -43,7 +43,7 @@ describe('AuthService', () => {
     });
     expect(() => authService.verify(token)).toThrow(
       'The token is valid, but the payload of the token is' +
-        ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+        ' not a TokenPayload object. This is ether a bug or a malicious attack.',
     );
   });
   it('should throw Error("The token is valid, but...")', () => {
@@ -54,7 +54,7 @@ describe('AuthService', () => {
     });
     expect(() => authService.verify(token)).toThrow(
       'The token is valid, but the payload of the token is' +
-        ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+        ' not a TokenPayload object. This is ether a bug or a malicious attack.',
     );
   });
   it('should throw Error("The token is valid, but...")', () => {
@@ -65,7 +65,7 @@ describe('AuthService', () => {
     });
     expect(() => authService.verify(token)).toThrow(
       'The token is valid, but the payload of the token is' +
-        ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+        ' not a TokenPayload object. This is ether a bug or a malicious attack.',
     );
   });
   it('should throw Error("The token is valid, but...")', () => {
@@ -87,7 +87,7 @@ describe('AuthService', () => {
     });
     expect(() => authService.verify(token)).toThrow(
       'The token is valid, but the payload of the token is' +
-        ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+        ' not a TokenPayload object. This is ether a bug or a malicious attack.',
     );
   });
   it('should throw Error("The token is valid, but...")', () => {
@@ -110,7 +110,7 @@ describe('AuthService', () => {
     });
     expect(() => authService.verify(token)).toThrow(
       'The token is valid, but the payload of the token is' +
-        ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+        ' not a TokenPayload object. This is ether a bug or a malicious attack.',
     );
   });
   it('should throw Error("resourceOwnerId must be a number.")', () => {
@@ -133,16 +133,16 @@ describe('AuthService', () => {
   });
   it('should throw AuthenticationRequiredError()', () => {
     expect(
-      async () => await authService.audit('', 'other', 1, 'type', 1)
+      async () => await authService.audit('', 'other', 1, 'type', 1),
     ).rejects.toThrow(new AuthenticationRequiredError());
     expect(
-      async () => await authService.audit(undefined, 'other', 1, 'type', 1)
+      async () => await authService.audit(undefined, 'other', 1, 'type', 1),
     ).rejects.toThrow(new AuthenticationRequiredError());
     expect(() => authService.decode('')).toThrow(
-      new AuthenticationRequiredError()
+      new AuthenticationRequiredError(),
     );
     expect(() => authService.decode(undefined)).toThrow(
-      new AuthenticationRequiredError()
+      new AuthenticationRequiredError(),
     );
   });
   it('should pass audit', async () => {
@@ -176,7 +176,7 @@ describe('AuthService', () => {
       ],
     });
     expect(
-      async () => await authService.audit(token, 'delete', 1, 'type', 5)
+      async () => await authService.audit(token, 'delete', 1, 'type', 5),
     ).rejects.toThrow(new PermissionDeniedError('delete', 1, 'type', 5));
   });
   it('should verify and decode successfully', () => {
@@ -190,10 +190,10 @@ describe('AuthService', () => {
     expect(authService.verify(`bearer ${token}`)).toEqual(authorization);
     expect(authService.decode(token).authorization).toEqual(authorization);
     expect(authService.decode(`Bearer ${token}`).authorization).toEqual(
-      authorization
+      authorization,
     );
     expect(authService.decode(`bearer ${token}`).authorization).toEqual(
-      authorization
+      authorization,
     );
   });
   it('should throw NotRefreshTokenError()', async () => {
@@ -202,10 +202,10 @@ describe('AuthService', () => {
       permissions: [],
     });
     await expect(sessionService.refreshSession(token)).rejects.toThrow(
-      new NotRefreshTokenError()
+      new NotRefreshTokenError(),
     );
     await expect(sessionService.revokeSession(token)).rejects.toThrow(
-      new NotRefreshTokenError()
+      new NotRefreshTokenError(),
     );
   });
   it('should throw Error()', () => {
@@ -232,7 +232,7 @@ describe('AuthService', () => {
       action: AuthorizedAction,
       resourceOwnerId?: number,
       resourceType?: string,
-      resourceId?: number
+      resourceId?: number,
     ) => {
       handler_called = true;
       return true;
@@ -260,7 +260,7 @@ describe('AuthService', () => {
       action: AuthorizedAction,
       resourceOwnerId?: number,
       resourceType?: string,
-      resourceId?: number
+      resourceId?: number,
     ) => {
       handler_called = true;
       return false;
@@ -281,7 +281,7 @@ describe('AuthService', () => {
     expect(async () => {
       await authService.audit(token, 'another_action', 1, 'user', 1);
     }).rejects.toThrow(
-      new PermissionDeniedError('another_action', 1, 'user', 1)
+      new PermissionDeniedError('another_action', 1, 'user', 1),
     );
     expect(handler_called).toBe(true);
   });
@@ -294,7 +294,7 @@ describe('AuthService', () => {
       resourceOwnerId?: number,
       resourceType?: string,
       resourceId?: number,
-      customLogicData?: any
+      customLogicData?: any,
     ) => {
       handler_called = true;
       data = customLogicData;
@@ -317,7 +317,7 @@ describe('AuthService', () => {
     expect(async () => {
       await authService.audit(token, 'another_action', 1, 'user', 1);
     }).rejects.toThrow(
-      new PermissionDeniedError('another_action', 1, 'user', 1)
+      new PermissionDeniedError('another_action', 1, 'user', 1),
     );
     expect(handler_called).toBe(true);
     expect(data).toEqual({ some: 'data' });
@@ -329,7 +329,7 @@ describe('AuthService', () => {
       action: AuthorizedAction,
       resourceOwnerId?: number,
       resourceType?: string,
-      resourceId?: number
+      resourceId?: number,
     ) => {
       handler_called = true;
       return true;
@@ -356,7 +356,7 @@ describe('AuthService', () => {
       'some_action',
       1,
       'another_resource',
-      undefined
+      undefined,
     );
     expect(handler_called).toBe(true);
     handler_called = false;
@@ -365,7 +365,7 @@ describe('AuthService', () => {
       'another_action',
       undefined,
       'another_resource',
-      undefined
+      undefined,
     );
     expect(handler_called).toBe(true);
   });

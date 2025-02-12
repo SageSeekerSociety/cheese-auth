@@ -11,7 +11,7 @@ describe('Avatar Module', () => {
   const MockedEmailService = <jest.Mock<EmailService>>EmailService;
   const TestUsername = `TestUser-${Math.floor(Math.random() * 10000000000)}`;
   const TestEmail = `test-${Math.floor(
-    Math.random() * 10000000000
+    Math.random() * 10000000000,
   )}@ruc.edu.cn`;
   let TestToken: string;
   let TestUserId: number;
@@ -39,10 +39,10 @@ describe('Avatar Module', () => {
       });
       expect(respond1.status).toBe(201);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveReturnedTimes(1);
       expect(
-        MockedEmailService.mock.instances[0].sendRegisterCode
+        MockedEmailService.mock.instances[0].sendRegisterCode,
       ).toHaveBeenCalledWith(TestEmail, expect.any(String));
       const verificationCode = (
         MockedEmailService.mock.instances[0].sendRegisterCode as jest.Mock
@@ -156,7 +156,7 @@ describe('Avatar Module', () => {
         .send();
       expect(respond.status).toBe(200);
       expect(respond.body.message).toContain(
-        'Get available avatarIds successfully'
+        'Get available avatarIds successfully',
       );
       expect(respond.body.data.avatarIds.length).toEqual(3);
     });

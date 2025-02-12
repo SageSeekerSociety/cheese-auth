@@ -34,7 +34,7 @@ export class AvatarsController {
   @Guard('create', 'avatar')
   async createAvatar(
     @UploadedFile() file: Express.Multer.File,
-    @Headers('Authorization') @AuthToken() auth: string
+    @Headers('Authorization') @AuthToken() auth: string,
   ): Promise<UploadAvatarResponseDto> {
     const avatar = await this.avatarsService.save(file.path, file.filename);
     return {
@@ -50,7 +50,7 @@ export class AvatarsController {
   @NoAuth()
   async getDefaultAvatar(
     @Headers('If-None-Match') ifNoneMatch: string,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const defaultAvatarId = await this.avatarsService.getDefaultAvatarId();
     const avatarPath = await this.avatarsService.getAvatarPath(defaultAvatarId);
@@ -83,7 +83,7 @@ export class AvatarsController {
   async getAvatar(
     @Headers('If-None-Match') ifNoneMatch: string,
     @Param('id', ParseIntPipe) @ResourceId() id: number,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const avatarPath = await this.avatarsService.getAvatarPath(id);
     if (!fs.existsSync(avatarPath)) {
@@ -114,7 +114,7 @@ export class AvatarsController {
   @Guard('enumerate', 'avatar')
   async getAvailableAvatarIds(
     @Query('type') type: AvatarType = AvatarType.predefined,
-    @Headers('Authorization') @AuthToken() auth: string
+    @Headers('Authorization') @AuthToken() auth: string,
   ) {
     if (type == AvatarType.predefined) {
       const avatarIds = await this.avatarsService.getPreDefinedAvatarIds();
