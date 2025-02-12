@@ -8,7 +8,7 @@ import { PermissionDeniedError } from '../auth/auth.error';
 export class UsersPermissionService implements OnModuleInit {
   constructor(
     private readonly authService: AuthService,
-    private readonly rolePermissionService: RolePermissionService
+    private readonly rolePermissionService: RolePermissionService,
   ) {}
 
   onModuleInit() {
@@ -20,12 +20,12 @@ export class UsersPermissionService implements OnModuleInit {
         resourceOwnerId?: number,
         resourceType?: string,
         resourceId?: number,
-        customLogicData?: any
+        customLogicData?: any,
       ): Promise<boolean> => {
         const authorization =
           await this.rolePermissionService.getAuthorizationForUserWithRole(
             userId,
-            customLogicData.role
+            customLogicData.role,
           );
         try {
           await this.authService.auditWithoutToken(
@@ -33,7 +33,7 @@ export class UsersPermissionService implements OnModuleInit {
             action,
             resourceOwnerId,
             resourceType,
-            resourceId
+            resourceId,
           );
         } catch (e) {
           if (e instanceof PermissionDeniedError) {
@@ -43,7 +43,7 @@ export class UsersPermissionService implements OnModuleInit {
           throw e;
         }
         return true;
-      }
+      },
     );
   }
 

@@ -30,7 +30,7 @@ export class AuthService {
     AuthService.instance = this;
     const tokenPayloadSchemaRaw = readFileSync(
       path.resolve(__dirname, '../../src/auth/token-payload.schema.json'),
-      'utf8'
+      'utf8',
     );
     const tokenPayloadSchema = JSON.parse(tokenPayloadSchemaRaw);
     this.isTokenPayloadValidate = new Ajv().compile(tokenPayloadSchema);
@@ -43,7 +43,7 @@ export class AuthService {
     if (payload == undefined || !this.isTokenPayloadValidate(payload)) {
       throw new Error(
         'The token is valid, but the payload of the token is' +
-          ' not a TokenPayload object. This is ether a bug or a malicious attack.'
+          ' not a TokenPayload object. This is ether a bug or a malicious attack.',
       );
     }
     return payload as TokenPayload;
@@ -105,7 +105,7 @@ export class AuthService {
     action: AuthorizedAction,
     resourceOwnerId?: number,
     resourceType?: string,
-    resourceId?: number
+    resourceId?: number,
   ): Promise<void> {
     const authorization = this.verify(token);
     await this.auditWithoutToken(
@@ -113,7 +113,7 @@ export class AuthService {
       action,
       resourceOwnerId,
       resourceType,
-      resourceId
+      resourceId,
     );
   }
 
@@ -123,7 +123,7 @@ export class AuthService {
     action: AuthorizedAction,
     resourceOwnerId?: number,
     resourceType?: string,
-    resourceId?: number
+    resourceId?: number,
   ): Promise<void> {
     // In many situations, the coders may forget to convert the string to number.
     // So we do it here.
@@ -193,7 +193,7 @@ export class AuthService {
           resourceOwnerId,
           resourceType,
           resourceId,
-          permission.customLogicData
+          permission.customLogicData,
         );
         if (result !== true) continue;
       }
@@ -206,7 +206,7 @@ export class AuthService {
       action,
       resourceOwnerId,
       resourceType,
-      resourceId
+      resourceId,
     );
   }
 
