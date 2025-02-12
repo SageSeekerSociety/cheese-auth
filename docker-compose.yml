@@ -1,6 +1,6 @@
 services:
   cheese-auth:
-    image: ghcr.io/sageseekersociety/cheese-auth:${CHEESE_AUTH_TAG:-latest}
+    image: ghcr.io/sageseekersociety/cheese-auth:${CHEESE_AUTH_TAG:-main}
     env_file: .env
     volumes:
       - type: volume
