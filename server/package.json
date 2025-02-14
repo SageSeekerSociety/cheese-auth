@@ -1,6 +1,6 @@
 {
   "name": "cheese-auth",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "An authorization and authentication solution extracted from the Cheese Project.",
   "author": "Cheese Team, https://github.com/SageSeekerSociety",
   "private": false,
