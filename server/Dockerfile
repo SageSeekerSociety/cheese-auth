@@ -4,8 +4,8 @@ WORKDIR /app
 ENV COREPACK_HOME=/app/corepack
 ENV PNPM_HOME=/app/.pnpm
 ENV PNPM_CACHE=/app/.pnpm-cache
-ENV PATH="${PNPM_HOME}:$PATH"ENV PORT=8080
-EXPOSE 8080
+ENV PATH="${PNPM_HOME}:$PATH"
+EXPOSE ${PORT}
 
 COPY . ./
 RUN apt-get update -y && apt-get install -y openssl curl \
