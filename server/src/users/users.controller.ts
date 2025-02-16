@@ -13,7 +13,6 @@ import {
   Delete,
   Get,
   Headers,
-  Inject,
   Ip,
   Param,
   ParseIntPipe,
@@ -21,7 +20,6 @@ import {
   Put,
   Query,
   Res,
-  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
@@ -310,6 +308,34 @@ export class UsersController {
       message: 'Query user successfully.',
       data: {
         user: user,
+      },
+    };
+  }
+
+  @Get('/')
+  @Guard('enumerate', 'user')
+  async getUsers(
+    @Query()
+    { page_start: pageStart, page_size: pageSize }: PageDto,
+    @Headers('Authorization') @AuthToken() auth: string | undefined,
+    @UserId() viewerId: number | undefined,
+    @Ip() ip: string,
+    @Headers('User-Agent') userAgent: string | undefined,
+  ): Promise<GetFollowersResponseDto> {
+    if (pageSize == undefined || pageSize == 0) pageSize = 20;
+    const [users, page] = await this.usersService.getUsers(
+      pageStart,
+      pageSize,
+      viewerId,
+      ip,
+      userAgent,
+    );
+    return {
+      code: 200,
+      message: 'Query users successfully.',
+      data: {
+        users: users,
+        page: page,
       },
     };
   }

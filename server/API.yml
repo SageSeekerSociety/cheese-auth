@@ -211,6 +211,34 @@ components:
           description: 下一页第一个 item 的 ID
 paths:
   /users:
+    get:
+      summary: 获取用户列表
+      operationId: getUsers
+      parameters:
+        - $ref: "#/components/parameters/page_start"
+        - $ref: "#/components/parameters/page_size"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: "#/components/schemas/CommonResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/User"
+                          page:
+                            $ref: "#/components/schemas/Page"
+                    required:
+                      - data
     post:
       summary: 用户注册
       operationId: register

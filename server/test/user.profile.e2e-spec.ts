@@ -198,6 +198,26 @@ describe('Profile Submodule of User Module', () => {
       expect(respond.body.code).toBe(401);
     });
   });
+  describe('get user profiles', () => {
+    it('should get user profiles', async () => {
+      const respond = await request(app.getHttpServer())
+        .get(`/users/`)
+        .query({ page_start: TestUserId, page_size: 1 })
+        .set('User-Agent', 'PostmanRuntime/7.26.8')
+        .set('authorization', 'Bearer ' + TestToken);
+      expect(respond.body.message).toBe('Query users successfully.');
+      expect(respond.status).toBe(200);
+      expect(respond.body.code).toBe(200);
+      expect(respond.body.data.users[0].username).toBe(TestUsername);
+      expect(respond.body.data.users[0].nickname).toBe('test_user_updated');
+      expect(respond.body.data.users[0].avatarId).toBe(UpdateAvatarId);
+      expect(respond.body.data.users[0].intro).toBe('test user updated');
+      expect(respond.body.data.users[0].follow_count).toBe(0);
+      expect(respond.body.data.users[0].fans_count).toBe(0);
+      expect(respond.body.data.users[0].is_follow).toBe(false);
+      expect(respond.body.data.page.page_size).toBe(1);
+    });
+  });
 
   afterAll(async () => {
     await app.close();

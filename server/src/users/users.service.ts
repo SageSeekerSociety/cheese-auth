@@ -367,6 +367,31 @@ export class UsersService {
     }
   }
 
+  async toUserDto(
+    user: User,
+    profile: UserProfile,
+    viewerId: number | undefined, // optional
+  ): Promise<UserDto> {
+    const followCountPromise = this.getFollowingCount(user.id);
+    const fansCountPromise = this.getFollowedCount(user.id);
+    const ifFollowPromise = this.isUserFollowUser(viewerId, user.id);
+    const [followCount, fansCount, isFollow] = await Promise.all([
+      followCountPromise,
+      fansCountPromise,
+      ifFollowPromise,
+    ]);
+    return {
+      id: user.id,
+      username: user.username,
+      nickname: profile.nickname,
+      avatarId: profile.avatarId,
+      intro: profile.intro,
+      follow_count: followCount,
+      fans_count: fansCount,
+      is_follow: isFollow,
+    };
+  }
+
   async getUserDtoById(
     userId: number,
     viewerId: number | undefined, // optional
@@ -384,24 +409,7 @@ export class UsersService {
         userAgent,
       },
     });
-    const followCountPromise = this.getFollowingCount(userId);
-    const fansCountPromise = this.getFollowedCount(userId);
-    const ifFollowPromise = this.isUserFollowUser(viewerId, userId);
-    const [followCount, fansCount, isFollow] = await Promise.all([
-      followCountPromise,
-      fansCountPromise,
-      ifFollowPromise,
-    ]);
-    return {
-      id: user.id,
-      username: user.username,
-      nickname: profile.nickname,
-      avatarId: profile.avatarId,
-      intro: profile.intro,
-      follow_count: followCount,
-      fans_count: fansCount,
-      is_follow: isFollow,
-    };
+    return await this.toUserDto(user, profile, viewerId);
   }
 
   // Returns:
@@ -605,6 +613,64 @@ export class UsersService {
         avatarId,
       },
     });
+  }
+
+  async getUsers(
+    firstUserId: number | undefined, // undefined if from start
+    pageSize: number,
+    viewerId: number | undefined, // optional
+    ip: string,
+    userAgent: string | undefined, // optional
+  ): Promise<[UserDto[], PageDto]> {
+    if (firstUserId == undefined) {
+      const relations = await this.prismaService.user.findMany({
+        take: pageSize + 1,
+        orderBy: { id: 'asc' },
+        include: {
+          userProfile: true,
+        },
+      });
+      const DTOs = await Promise.all(
+        relations.map((u) => {
+          return this.toUserDto(u, u.userProfile!, viewerId);
+        }),
+      );
+      return PageHelper.PageStart(DTOs, pageSize, (item) => item.id);
+    } else {
+      const prevRelationshipsPromise = this.prismaService.user.findMany({
+        where: {
+          id: { lt: firstUserId },
+        },
+        take: pageSize,
+        orderBy: { id: 'desc' },
+        include: {
+          userProfile: true,
+        },
+      });
+      const queriedRelationsPromise = this.prismaService.user.findMany({
+        where: {
+          id: { gte: firstUserId },
+        },
+        take: pageSize + 1,
+        orderBy: { id: 'asc' },
+        include: {
+          userProfile: true,
+        },
+      });
+      const DTOs = await Promise.all(
+        (await queriedRelationsPromise).map((u) => {
+          return this.toUserDto(u, u.userProfile!, viewerId);
+        }),
+      );
+      const prev = await prevRelationshipsPromise;
+      return PageHelper.PageMiddle(
+        prev,
+        DTOs,
+        pageSize,
+        (i) => i.id,
+        (i) => i.id,
+      );
+    }
   }
 
   async getUniqueFollowRelationship(
