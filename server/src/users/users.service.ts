@@ -36,6 +36,7 @@ import {
   EmailNotFoundError,
   EmailSendFailedError,
   FollowYourselfError,
+  InvalidCredentialsError,
   InvalidEmailAddressError,
   InvalidEmailSuffixError,
   InvalidNicknameError,
@@ -256,7 +257,7 @@ export class UsersService {
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
       await this.createUserRegisterLog( UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail, email, ip, userAgent );
-      throw new InvalidEmailSuffixError(email, this.emailSuffixRule);
+      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
     }
 
     // TODO: Implement rate limiting for sending verification codes.
@@ -379,7 +380,7 @@ export class UsersService {
       throw new InvalidEmailAddressError(email);
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
-      throw new InvalidEmailSuffixError(email, this.emailSuffixRule);
+      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
     }
 
     // Verify email code
@@ -525,32 +526,41 @@ export class UsersService {
     ip: string,
     userAgent?: string,
   ): Promise<[UserDto, string]> {
-    const user = await this.findUserRecordByUsernameOrThrow(username);
+    try {
+      const user = await this.findUserRecordByUsernameOrThrow(username);
 
-    if (!bcrypt.compareSync(password, user.hashedPassword)) {
-       // Log failed login attempt
-       await this.prismaService.userLoginLog.create({
-          data: { userId: user.id, ip, userAgent },
-       });
-      throw new PasswordNotMatchError(username);
+      if (!bcrypt.compareSync(password, user.hashedPassword)) {
+        // Log failed login attempt
+        await this.prismaService.userLoginLog.create({
+            data: { userId: user.id, ip, userAgent },
+        });
+        throw new InvalidCredentialsError();
+      }
+
+      // Login successful. Log success.
+      await this.prismaService.userLoginLog.create({
+        data: {
+          userId: user.id,
+          ip,
+          userAgent,
+        },
+      });
+
+      // Fetch DTO and create session concurrently
+      const userDtoPromise = this.getUserDtoById(user.id, ip, user.id, userAgent); // viewerId is self
+      const refreshTokenPromise = this.createSession(user.id);
+
+      const [userDto, refreshToken] = await Promise.all([userDtoPromise, refreshTokenPromise]);
+
+      return [userDto, refreshToken];
+    } catch (error) {
+      if (error instanceof UsernameNotFoundError) {
+        Logger.warn(`Login attempt failed for non-existent username: ${username}, IP: ${ip}`);
+        throw new InvalidCredentialsError();
+      }
+
+      throw error;
     }
-
-    // Login successful. Log success.
-    await this.prismaService.userLoginLog.create({
-      data: {
-        userId: user.id,
-        ip,
-        userAgent,
-      },
-    });
-
-    // Fetch DTO and create session concurrently
-    const userDtoPromise = this.getUserDtoById(user.id, ip, user.id, userAgent); // viewerId is self
-    const refreshTokenPromise = this.createSession(user.id);
-
-    const [userDto, refreshToken] = await Promise.all([userDtoPromise, refreshTokenPromise]);
-
-    return [userDto, refreshToken];
   }
 
   /**
@@ -587,7 +597,7 @@ export class UsersService {
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
        await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToNoneExistentEmail, undefined, ip, userAgent );
-      throw new InvalidEmailSuffixError(email, this.emailSuffixRule);
+      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
     }
 
     // Find active user by email
@@ -596,8 +606,12 @@ export class UsersService {
     });
 
     if (user == undefined) {
+      // Log internally that the email was not found
       await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToNoneExistentEmail, undefined, ip, userAgent );
-      throw new EmailNotFoundError(email);
+      // IMPORTANT: Do NOT throw an error to the client. Return successfully.
+      // This prevents attackers from confirming which emails are registered.
+      Logger.log(`Password reset requested for non-existent or inactive email: ${email}. Responded vaguely.`);
+      return; // Exit gracefully
     }
 
     // Generate a specific, short-lived token for password reset action

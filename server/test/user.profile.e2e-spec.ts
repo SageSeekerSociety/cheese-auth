@@ -110,7 +110,7 @@ describe('Profile Submodule of User Module', () => {
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .set('authorization', 'Bearer ' + TestToken)
         .send({
-          nickname: 'test_user_updated',
+          nickname: 'test_user_up',
           intro: 'test user updated',
           avatarId: UpdateAvatarId,
         });
@@ -124,7 +124,7 @@ describe('Profile Submodule of User Module', () => {
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .set('authorization', 'Bearer ' + TestToken + '1')
         .send({
-          nickname: 'test_user_updated',
+          nickname: 'test_user_up',
           intro: 'test user updated',
           avatarId: UpdateAvatarId,
         });
@@ -137,7 +137,7 @@ describe('Profile Submodule of User Module', () => {
         .put(`/users/${TestUserId}`)
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .send({
-          nickname: 'test_user_updated',
+          nickname: 'test_user_up',
           intro: 'test user updated',
           avatarId: UpdateAvatarId,
         });
@@ -157,7 +157,7 @@ describe('Profile Submodule of User Module', () => {
       expect(respond.status).toBe(200);
       expect(respond.body.code).toBe(200);
       expect(respond.body.data.user.username).toBe(TestUsername);
-      expect(respond.body.data.user.nickname).toBe('test_user_updated');
+      expect(respond.body.data.user.nickname).toBe('test_user_up');
       expect(respond.body.data.user.avatarId).toBe(UpdateAvatarId);
       expect(respond.body.data.user.intro).toBe('test user updated');
       expect(respond.body.data.user.follow_count).toBe(0);
@@ -174,7 +174,7 @@ describe('Profile Submodule of User Module', () => {
     //   expect(respond.status).toBe(200);
     //   expect(respond.body.code).toBe(200);
     //   expect(respond.body.data.user.username).toBe(TestUsername);
-    //   expect(respond.body.data.user.nickname).toBe('test_user_updated');
+    //   expect(respond.body.data.user.nickname).toBe('test_user_up');
     //   expect(respond.body.data.user.avatarId).toBe(UpdateAvatarId);
     //   expect(respond.body.data.user.intro).toBe('test user updated');
     //   expect(respond.body.data.user.follow_count).toBe(0);
@@ -209,7 +209,7 @@ describe('Profile Submodule of User Module', () => {
       expect(respond.status).toBe(200);
       expect(respond.body.code).toBe(200);
       expect(respond.body.data.users[0].username).toBe(TestUsername);
-      expect(respond.body.data.users[0].nickname).toBe('test_user_updated');
+      expect(respond.body.data.users[0].nickname).toBe('test_user_up');
       expect(respond.body.data.users[0].avatarId).toBe(UpdateAvatarId);
       expect(respond.body.data.users[0].intro).toBe('test user updated');
       expect(respond.body.data.users[0].follow_count).toBe(0);

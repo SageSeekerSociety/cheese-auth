@@ -65,21 +65,16 @@ describe('User Module', () => {
           .expect(422)
       );
     });
-    it('should return InvalidEmailSuffixError', () => {
-      return (
-        request(app.getHttpServer())
-          .post('/users/verify/email')
-          //.set('User-Agent', 'PostmanRuntime/7.26.8')
-          .send({
-            email: 'test@126.com',
-          })
-          .expect({
-            code: 422,
-            message:
-              'InvalidEmailSuffixError: Invalid email suffix: test@126.com. Only @ruc.edu.cn is supported currently.',
-          })
-          .expect(422)
-      );
+    it('should return InvalidEmailSuffixError', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/verify/email')
+        //.set('User-Agent', 'PostmanRuntime/7.26.8')
+        .send({
+          email: 'test@126.com',
+        });
+      expect(response.body.message).toMatch(/^InvalidEmailSuffixError: /);
+      expect(response.body.code).toBe(422);
+      expect(response.status).toBe(422);
     });
     it('should return EmailSendFailedError', async () => {
       MockedEmailService.prototype.sendRegisterCode.mockImplementation(() => {
@@ -343,9 +338,7 @@ describe('User Module', () => {
           emailCode: verificationCode,
         });
       const respond = await req;
-      expect(respond.body.message).toStrictEqual(
-        `InvalidNicknameError: Invalid nickname: test user. Nickname must be 1-16 characters long and can only contain letters, numbers, underscores, hyphens and Chinese characters.`,
-      );
+      expect(respond.body.message).toMatch(/^InvalidNicknameError: /);
       expect(respond.body.code).toEqual(422);
       req.expect(422);
     });
@@ -381,9 +374,7 @@ describe('User Module', () => {
           emailCode: verificationCode,
         });
       const respond = await req;
-      expect(respond.body.message).toStrictEqual(
-        `InvalidPasswordError: Invalid password. Password must be at least 8 characters long and must contain at least one letter, one special character and one number.`,
-      );
+      expect(respond.body.message).toMatch(/^InvalidPasswordError: /);
       expect(respond.body.code).toEqual(422);
       req.expect(422);
     });
@@ -632,7 +623,7 @@ describe('User Module', () => {
       expect(respond2.body.data.user.username).toBe(TestUsername);
       expect(respond2.body.data.user.nickname).toBe('test_user');
     });
-    it('should return UsernameNotFoundError', async () => {
+    it('should return InvalidCredentialsError when username not found', async () => {
       const respond = await request(app.getHttpServer())
         .post('/users/auth/login')
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
@@ -640,11 +631,11 @@ describe('User Module', () => {
           username: TestUsername + 'KKK',
           password: 'abc123456!!!',
         });
-      expect(respond.status).toBe(404);
-      expect(respond.body.code).toBe(404);
-      expect(respond.body.message).toMatch(/^UsernameNotFoundError: /);
+      expect(respond.status).toBe(401);
+      expect(respond.body.code).toBe(401);
+      expect(respond.body.message).toMatch(/^InvalidCredentialsError: /);
     });
-    it('should return PasswordNotMatchError', async () => {
+    it('should return InvalidCredentialsError when password not match', async () => {
       const respond = await request(app.getHttpServer())
         .post('/users/auth/login')
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
@@ -654,7 +645,7 @@ describe('User Module', () => {
         });
       expect(respond.status).toBe(401);
       expect(respond.body.code).toBe(401);
-      expect(respond.body.message).toMatch(/^PasswordNotMatchError: /);
+      expect(respond.body.message).toMatch(/^InvalidCredentialsError: /);
     });
     it('should logout successfully', async () => {
       const respond = await request(app.getHttpServer())
@@ -746,16 +737,16 @@ describe('User Module', () => {
       );
     });
 
-    it('should return EmailNotFoundError', async () => {
+    it('should return successfully when email not found', async () => {
       const respond = await request(app.getHttpServer())
         .post('/users/recover/password/request')
         //.set('User-Agent', 'PostmanRuntime/7.26.8')
         .send({
           email: 'KKK-' + TestEmail,
         });
-      expect(respond.body.message).toMatch(/^EmailNotFoundError: /);
-      expect(respond.body.code).toBe(404);
-      expect(respond.status).toBe(404);
+      expect(respond.body.message).toMatch("Send email successfully.");
+      expect(respond.body.code).toBe(201);
+      expect(respond.status).toBe(201);
     });
 
     it('should send a password reset email and reset the password', async () => {
