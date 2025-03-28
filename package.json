@@ -1,0 +1,22 @@
+{
+  "name": "cheese-auth",
+  "version": "0.1.0",
+  "description": "An authorization and authentication solution extracted from the Cheese Project.",
+  "author": "Cheese Team, https://github.com/SageSeekerSociety",
+  "private": false,
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "packageManager": "pnpm@10.6.1"
+}

@@ -36,9 +36,11 @@
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/serve-static": "^5.0.2",
     "@prisma/client": "6.3.1",
+    "@sageseekersociety/cheese-auth-oauth-types": "workspace:^",
     "@types/md5": "^2.3.5",
     "ajv": "^8.17.1",
     "async-mutex": "^0.5.0",
+    "axios": "^1.8.4",
     "bcryptjs": "^3.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -84,12 +86,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma"
-    ]
-  }
+  "packageManager": "pnpm@10.6.1+sha512.40ee09af407fa9fbb5fbfb8e1cb40fbb74c0af0c3e10e9224d7b53c7658528615b2c92450e74cfad91e3a2dcafe3ce4050d80bda71d757756d2ce2b66213e9a3"
 }

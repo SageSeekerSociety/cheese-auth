@@ -50,6 +50,7 @@ import {
   UsernameAlreadyRegisteredError,
   UsernameNotFoundError,
 } from './users.error';
+import { OAuthUserInfo } from '@sageseekersociety/cheese-auth-oauth-types';
 
 @Injectable()
 export class UsersService {
@@ -908,5 +909,148 @@ export class UsersService {
     });
     assert(result == 0 || result == 1);
     return result > 0;
+  }
+
+  /**
+   * 使用OAuth提供程序登录/注册用户
+   * @param providerId OAuth提供程序ID
+   * @param userInfo OAuth用户信息
+   * @param ip 用户IP
+   * @param userAgent 用户代理
+   */
+  async loginWithOAuth(
+    providerId: string,
+    userInfo: OAuthUserInfo,
+    ip: string,
+    userAgent: string | undefined,
+  ): Promise<[UserDto, string]> {
+    // 首先检查这个OAuth用户是否已经注册过
+    // 我们需要添加一个新表或字段来存储OAuth关联关系
+    const oauthConnection = await this.prismaService.userOAuthConnection.findUnique({
+      where: {
+        providerId_providerUserId: {
+          providerId,
+          providerUserId: userInfo.id,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    let user: User;
+    let profile: UserProfile;
+
+    // 如果已存在关联记录，使用现有用户
+    if (oauthConnection) {
+      user = oauthConnection.user;
+      const profileRecord = await this.prismaService.userProfile.findUnique({
+        where: { userId: user.id },
+      });
+      if (!profileRecord) {
+        throw new Error(`用户 ${user.id} 没有关联的资料记录`);
+      }
+      profile = profileRecord;
+    } else {
+      // 如果不存在关联，需要创建新用户或关联到现有用户
+      // 如果提供了电子邮件，尝试查找现有用户
+      let existingUser: User | null = null;
+      
+      if (userInfo.email) {
+        existingUser = await this.prismaService.user.findUnique({
+          where: { email: userInfo.email },
+        });
+      }
+
+      if (existingUser) {
+        // 如果找到了现有用户，则关联到这个用户
+        user = existingUser;
+        const profileRecord = await this.prismaService.userProfile.findUnique({
+          where: { userId: user.id },
+        });
+        if (!profileRecord) {
+          throw new Error(`用户 ${user.id} 没有关联的资料记录`);
+        }
+        profile = profileRecord;
+      } else {
+        // 如果没有找到现有用户，则创建新用户
+        // 从OAuth Provider获取的信息应该已经处理好了，这里直接使用
+        const username = userInfo.preferredUsername || userInfo.id;
+        
+        // 生成一个随机密码 (用户后续可以通过邮箱重置密码)
+        const password = this.generateRandomPassword();
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = bcrypt.hashSync(password, salt);
+        
+        // 创建用户和资料
+        const avatarId = await this.avatarsService.getDefaultAvatarId();
+        const userData = await this.prismaService.$transaction(async (prisma) => {
+          const newUser = await prisma.user.create({
+            data: {
+              username,
+              email: userInfo.email || '',
+              hashedPassword,
+              userProfile: {
+                create: {
+                  nickname: userInfo.name || username,
+                  intro: this.defaultIntro,
+                  avatarId,
+                },
+              },
+            },
+            include: {
+              userProfile: true,
+            },
+          });
+          
+          return newUser;
+        });
+        
+        user = userData;
+        profile = userData.userProfile!;
+      }
+      
+      // 创建OAuth关联
+      await this.prismaService.userOAuthConnection.create({
+        data: {
+          providerId,
+          providerUserId: userInfo.id,
+          userId: user.id,
+          rawProfile: userInfo, // 存储原始的用户信息
+        },
+      });
+    }
+    
+    // 记录登录日志
+    await this.prismaService.userLoginLog.create({
+      data: {
+        userId: user.id,
+        ip,
+        userAgent,
+      },
+    });
+    
+    // 创建会话
+    const refreshToken = await this.createSession(user.id);
+    
+    // 转换为DTO
+    const userDto = await this.toUserDto(user, profile, user.id);
+    
+    return [userDto, refreshToken];
+  }
+
+  /**
+   * 生成随机密码
+   */
+  private generateRandomPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let password = '';
+    
+    for (let i = 0; i < 16; i++) {
+      const randomIndex = Math.floor(Math.random() * chars.length);
+      password += chars[randomIndex];
+    }
+    
+    return password;
   }
 }

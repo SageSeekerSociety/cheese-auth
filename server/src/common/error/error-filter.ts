@@ -13,6 +13,7 @@ import {
   Catch,
   ExceptionFilter,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { BaseError } from './base-error';
@@ -50,6 +51,11 @@ export class BaseErrorExceptionFilter implements ExceptionFilter {
       if (exception instanceof BadRequestException) {
         response.status(400).json({
           code: 400,
+          message: `${exception.name}: ${exception.message}`,
+        });
+      } else if (exception instanceof NotFoundException) {
+        response.status(404).json({
+          code: 404,
           message: `${exception.name}: ${exception.message}`,
         });
       } else {

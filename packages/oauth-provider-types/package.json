@@ -1,0 +1,26 @@
+{
+  "name": "@sageseekersociety/cheese-auth-oauth-types",
+  "version": "0.1.0",
+  "description": "Type definitions for OAuth providers used in cheese-auth",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "tsc --noEmit"
+  },
+  "keywords": [
+    "oauth",
+    "types",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.6.1",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -14,7 +14,7 @@ model User {
   userProfile                                                        UserProfile?
   userProfileQueryLogUserProfileQueryLogViewerIdTouser               UserProfileQueryLog[]       @relation("user_profile_query_log_viewerIdTouser")
   userProfileQueryLogUserProfileQueryLogVieweeIdTouser               UserProfileQueryLog[]       @relation("user_profile_query_log_vieweeIdTouser")
-
+  oauthConnections UserOAuthConnection[]
   @@map("user")
 }
 
