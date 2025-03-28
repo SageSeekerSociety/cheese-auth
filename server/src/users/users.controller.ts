@@ -308,8 +308,8 @@ export class UsersController {
     const decodedAccessToken = this.authService.decode(accessToken);
     const userDto = await this.usersService.getUserDtoById(
       decodedAccessToken.authorization.userId,
-      decodedAccessToken.authorization.userId,
       ip,
+      decodedAccessToken.authorization.userId,
       userAgent,
     );
     const data: RefreshTokenResponseDto = {
@@ -400,8 +400,8 @@ export class UsersController {
   ): Promise<GetUserResponseDto> {
     const user = await this.usersService.getUserDtoById(
       id,
-      viewerId,
       ip,
+      viewerId,
       userAgent,
     );
     return {
@@ -503,10 +503,10 @@ export class UsersController {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followers, page] = await this.usersService.getFollowers(
       id,
+      ip,
       pageStart,
       pageSize,
       viewerId,
-      ip,
       userAgent,
     );
     return {
@@ -533,10 +533,10 @@ export class UsersController {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followees, page] = await this.usersService.getFollowees(
       id,
+      ip,
       pageStart,
       pageSize,
       viewerId,
-      ip,
       userAgent,
     );
     return {

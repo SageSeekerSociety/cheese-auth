@@ -81,8 +81,10 @@ enum UserRegisterLogType {
   RequestFailDurToSecurity
   RequestFailDueToSendEmailFailure
   Success
+  SuccessViaOAuth
   FailDueToUserExistence
   FailDueToWrongCodeOrExpired
+  FailDueToEmailRaceCondition
 }
 
 model UserRegisterLog {
@@ -111,7 +113,9 @@ enum UserResetPasswordLogType {
   RequestSuccess
   RequestFailDueToNoneExistentEmail
   RequestFailDueToSecurity
+  RequestFailDueToSendEmailFailure
   Success
+  FailDueToInvalidPassword
   FailDueToInvalidToken
   FailDueToExpiredRequest
   FailDueToNoUser
