@@ -9,6 +9,17 @@
 
 import { BaseError } from '../common/error/base-error';
 
+/**
+ * Generic error for login failures (invalid username OR password).
+ * Extends UnauthorizedException to return HTTP 401.
+ */
+export class InvalidCredentialsError extends BaseError {
+  constructor() {
+    // Generic message to prevent username enumeration
+    super('InvalidCredentialsError', 'Invalid username or password.', 401);
+  }
+}
+
 export class InvalidEmailAddressError extends BaseError {
   constructor(public readonly email: string) {
     super(

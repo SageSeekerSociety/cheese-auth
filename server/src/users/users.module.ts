@@ -17,15 +17,23 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { RolePermissionService } from './role-permission.service';
 import { ConfigModule } from '@nestjs/config';
+import { OAuthService } from '../auth/oauth/oauth.service';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, EmailModule, AuthModule, AvatarsModule],
+  imports: [
+    PrismaModule, 
+    ConfigModule, 
+    EmailModule, 
+    forwardRef(() => AuthModule), // Use forwardRef to avoid circular dependency
+    AvatarsModule
+  ],
   controllers: [UsersController],
   providers: [
     UsersService,
     UsersPermissionService,
     UsersRegisterRequestService,
     RolePermissionService,
+    OAuthService, // OAuth service will dynamically load providers
   ],
   exports: [UsersService],
 })

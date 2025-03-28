@@ -29,6 +29,28 @@ datasource db {
 }
 
 //
+// oauth.prisma
+//
+
+/// OAuth提供程序与用户关联表
+model UserOAuthConnection {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id") // 关联的用户ID
+  providerId     String    @map("provider_id") // OAuth提供程序ID，如 'school', 'google'
+  providerUserId String    @map("provider_user_id") // 在OAuth提供程序中的用户ID
+  rawProfile     Json?     @map("raw_profile") // 原始的用户资料信息，不同提供程序可能格式不同
+  refreshToken   String?   @map("refresh_token") // 可选的刷新令牌
+  tokenExpires   DateTime? @map("token_expires") // 令牌过期时间
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, providerUserId])
+  @@map("user_o_auth_connection")
+}
+
+//
 // session.prisma
 //
 
@@ -97,6 +119,7 @@ model User {
   userProfile                                                        UserProfile?
   userProfileQueryLogUserProfileQueryLogViewerIdTouser               UserProfileQueryLog[]       @relation("user_profile_query_log_viewerIdTouser")
   userProfileQueryLogUserProfileQueryLogVieweeIdTouser               UserProfileQueryLog[]       @relation("user_profile_query_log_vieweeIdTouser")
+  oauthConnections                                                   UserOAuthConnection[]
 
   @@map("user")
 }
@@ -164,8 +187,10 @@ enum UserRegisterLogType {
   RequestFailDurToSecurity
   RequestFailDueToSendEmailFailure
   Success
+  SuccessViaOAuth
   FailDueToUserExistence
   FailDueToWrongCodeOrExpired
+  FailDueToEmailRaceCondition
 }
 
 model UserRegisterLog {
@@ -194,7 +219,9 @@ enum UserResetPasswordLogType {
   RequestSuccess
   RequestFailDueToNoneExistentEmail
   RequestFailDueToSecurity
+  RequestFailDueToSendEmailFailure
   Success
+  FailDueToInvalidPassword
   FailDueToInvalidToken
   FailDueToExpiredRequest
   FailDueToNoUser

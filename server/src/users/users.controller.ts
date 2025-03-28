@@ -20,6 +20,8 @@ import {
   Put,
   Query,
   Res,
+  Redirect,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
@@ -61,6 +63,8 @@ import {
   UpdateUserResponseDto,
 } from './DTO/update-user.dto';
 import { UsersService } from './users.service';
+import { OAuthService } from '../auth/oauth/oauth.service';
+import { HttpStatus } from '@nestjs/common';
 
 @Controller('/users')
 export class UsersController {
@@ -69,13 +73,109 @@ export class UsersController {
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
-  ) {}
+    private readonly oauthService: OAuthService,
+  ) { }
 
   @ResourceOwnerIdGetter('user')
   async getUserOwner(userId: number): Promise<number | undefined> {
     return userId;
   }
 
+  // OAuth相关接口 - 从OAuthController移过来
+  @Get('auth/oauth/providers')
+  @NoAuth()
+  getOAuthProviders() {
+    return {
+      code: HttpStatus.OK,
+      message: 'OAuth providers retrieved',
+      data: this.oauthService.getProvidersConfig(),
+    };
+  }
+
+  @Get('auth/oauth/login/:providerId')
+  @NoAuth()
+  @Redirect()
+  oauthLogin(
+    @Param('providerId') providerId: string, 
+    @Query('state') state?: string,
+    @Query('access_type') accessType?: string
+  ) {
+    const provider = this.oauthService.getProvider(providerId);
+    if (!provider) {
+      throw new NotFoundException(`OAuth provider '${providerId}' not found`);
+    }
+    
+    const authUrl = provider.getAuthorizationUrl(state, accessType);
+    return { url: authUrl };
+  }
+
+  @Get('auth/oauth/callback/:providerId')
+  @NoAuth()
+  async oauthCallback(
+    @Param('providerId') providerId: string,
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Ip() ip: string,
+    @Headers('User-Agent') userAgent: string | undefined,
+    @Res() res: Response,
+  ) {
+    const provider = this.oauthService.getProvider(providerId);
+    if (!provider) {
+      throw new NotFoundException(`OAuth provider '${providerId}' not found`);
+    }
+    
+    try {
+      // 获取访问令牌
+      const accessToken = await provider.handleCallback(code, state);
+      
+      // 获取用户信息
+      const userInfo = await provider.getUserInfo(accessToken);
+      
+      // 调用用户服务进行OAuth登录/注册
+      const [userDto, refreshToken] = await this.usersService.loginWithOAuth(
+        providerId,
+        userInfo,
+        ip,
+        userAgent,
+      );
+      
+      // 刷新会话
+      const [newRefreshToken, jwtToken] = await this.sessionService.refreshSession(refreshToken);
+      const newRefreshTokenExpire = new Date(
+        this.authService.decode(newRefreshToken).validUntil,
+      );
+      
+      // 重定向到前端应用的页面
+      const frontendRedirectUrl = new URL(this.configService.get('frontend.url')!);
+      frontendRedirectUrl.pathname = '/oauth-success';
+      frontendRedirectUrl.searchParams.append('token', jwtToken);
+      
+      // 获取用户记录来获取邮箱
+      const user = await this.usersService.findUserRecordOrThrow(userDto.id);
+      // 始终传递email参数给前端，方便用户知道自己的邮箱
+      frontendRedirectUrl.searchParams.append('email', user.email);
+      
+      return res
+        .cookie('REFRESH_TOKEN', newRefreshToken, {
+          httpOnly: true,
+          sameSite: 'strict',
+          path: path.posix.join(
+            this.configService.get('cookieBasePath')!,
+            'users/auth',
+          ),
+          expires: new Date(newRefreshTokenExpire),
+        })
+        .redirect(frontendRedirectUrl.toString());
+    } catch (error: any) {
+      // 错误处理
+      const errorUrl = new URL(this.configService.get('frontend.url')!);
+      errorUrl.pathname = '/oauth-error';
+      errorUrl.searchParams.append('error', error.message);
+      return res.redirect(errorUrl.toString());
+    }
+  }
+
+  // 原有的用户控制器端点
   @Post('/verify/email')
   @NoAuth()
   async sendRegisterEmailCode(
@@ -167,6 +267,7 @@ export class UsersController {
         accessToken,
       },
     };
+    console.log(this.configService.get('cookieBasePath'));
     return res
       .cookie('REFRESH_TOKEN', newRefreshToken, {
         httpOnly: true,
@@ -207,8 +308,8 @@ export class UsersController {
     const decodedAccessToken = this.authService.decode(accessToken);
     const userDto = await this.usersService.getUserDtoById(
       decodedAccessToken.authorization.userId,
-      decodedAccessToken.authorization.userId,
       ip,
+      decodedAccessToken.authorization.userId,
       userAgent,
     );
     const data: RefreshTokenResponseDto = {
@@ -299,8 +400,8 @@ export class UsersController {
   ): Promise<GetUserResponseDto> {
     const user = await this.usersService.getUserDtoById(
       id,
-      viewerId,
       ip,
+      viewerId,
       userAgent,
     );
     return {
@@ -402,10 +503,10 @@ export class UsersController {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followers, page] = await this.usersService.getFollowers(
       id,
+      ip,
       pageStart,
       pageSize,
       viewerId,
-      ip,
       userAgent,
     );
     return {
@@ -432,10 +533,10 @@ export class UsersController {
     if (pageSize == undefined || pageSize == 0) pageSize = 20;
     const [followees, page] = await this.usersService.getFollowees(
       id,
+      ip,
       pageStart,
       pageSize,
       viewerId,
-      ip,
       userAgent,
     );
     return {

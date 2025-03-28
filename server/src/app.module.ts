@@ -1,5 +1,5 @@
 import { Module, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AvatarsModule } from './avatars/avatars.module';
@@ -9,9 +9,16 @@ import { EnsureGuardInterceptor } from './common/interceptor/ensure-guard.interc
 import { TokenValidateInterceptor } from './common/interceptor/token-validate.interceptor';
 import { UsersModule } from './users/users.module';
 import { StatusModule } from './common/status/status.module';
+import { AuthModule } from './auth/auth.module';
+import { EmailModule } from './email/email.module';
+import { PrismaModule } from './common/prisma/prisma.module';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ load: [configuration] }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration]
+    }),
     UsersModule,
     AvatarsModule,
     ServeStaticModule.forRoot({

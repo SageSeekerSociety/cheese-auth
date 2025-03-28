@@ -1,0 +1,17 @@
+/// OAuth提供程序与用户关联表
+model UserOAuthConnection {
+  id            Int      @id @default(autoincrement())
+  userId        Int      // 关联的用户ID
+  providerId    String   // OAuth提供程序ID，如 'school', 'google'
+  providerUserId String  // 在OAuth提供程序中的用户ID
+  rawProfile    Json?    // 原始的用户资料信息，不同提供程序可能格式不同
+  refreshToken  String?  // 可选的刷新令牌
+  tokenExpires  DateTime? // 令牌过期时间
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, providerUserId])
+  @@map("user_oauth_connections")
+}
