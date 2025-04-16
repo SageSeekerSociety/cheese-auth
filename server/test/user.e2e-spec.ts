@@ -435,7 +435,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Lax(; Secure)?$/,
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -511,6 +511,10 @@ describe('User Module', () => {
       const refreshToken = respond2.header['set-cookie'][0]
         .split(';')[0]
         .split('=')[1];
+      expect(refreshToken).toBeDefined();
+      expect(respond2.header['set-cookie'][0]).toMatch(
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Lax(; Secure)?$/,
+      );
       jest.setSystemTime(Date.now() + 31 * 24 * 60 * 60 * 1000);
       const respond3 = await request(app.getHttpServer())
         .post('/users/auth/refresh-token')
@@ -538,7 +542,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Lax(; Secure)?$/,
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -595,7 +599,7 @@ describe('User Module', () => {
       expect(respond.body.data.user.username).toBe(TestUsername);
       expect(respond.body.data.user.nickname).toBe('test_user');
       expect(respond.header['set-cookie'][0]).toMatch(
-        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Strict$/,
+        /^REFRESH_TOKEN=.+; Path=\/users\/auth; Expires=.+; HttpOnly; SameSite=Lax(; Secure)?$/,
       );
       TestRefreshToken = respond.header['set-cookie'][0]
         .split(';')[0]
@@ -744,7 +748,7 @@ describe('User Module', () => {
         .send({
           email: 'KKK-' + TestEmail,
         });
-      expect(respond.body.message).toMatch("Send email successfully.");
+      expect(respond.body.message).toMatch('Send email successfully.');
       expect(respond.body.code).toBe(201);
       expect(respond.status).toBe(201);
     });

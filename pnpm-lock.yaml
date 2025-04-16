@@ -8,6 +8,22 @@ importers:
 
   .: {}
 
+  packages/cheese-auth-ruc-oauth-provider:
+    dependencies:
+      '@sageseekersociety/cheese-auth-oauth-types':
+        specifier: workspace:*
+        version: link:../oauth-provider-types
+      axios:
+        specifier: ^1.6.0
+        version: 1.8.4
+    devDependencies:
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.17.30
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.2
+
   packages/oauth-provider-types:
     devDependencies:
       typescript:
@@ -1305,6 +1321,9 @@ packages:
 
   '@types/multer@1.4.12':
     resolution: {integrity: sha512-pQ2hoqvXiJt2FP9WQVLPRO+AmiIm/ZYkavPlIQnx282u4ZrVdztx0pkh3jjpQt0Kz+YI0YhSG264y08UJKoUQg==}
+
+  '@types/node@20.17.30':
+    resolution: {integrity: sha512-7zf4YyHA+jvBNfVrk2Gtvs6x7E8V+YDW05bNfG2XkWDJfYRXrTiP/DsB2zSYTaHX0bGIujTBQdMVAhb+j7mwpg==}
 
   '@types/node@22.13.14':
     resolution: {integrity: sha512-Zs/Ollc1SJ8nKUAgc7ivOEdIBM8JAKgrqqUYi2J997JuKO7/tpQC+WCetQ1sypiKCQWHdvdg9wBNpUPEWZae7w==}
@@ -4709,6 +4728,9 @@ packages:
     resolution: {integrity: sha512-u3xV3X7uzvi5b1MncmZo3i2Aw222Zk1keqLA1YkHldREkAhAqi65wuPfe7lHx8H/Wzy+8CE7S7uS3jekIM5s8g==}
     engines: {node: '>=8'}
 
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
@@ -6282,6 +6304,10 @@ snapshots:
   '@types/multer@1.4.12':
     dependencies:
       '@types/express': 5.0.1
+
+  '@types/node@20.17.30':
+    dependencies:
+      undici-types: 6.19.8
 
   '@types/node@22.13.14':
     dependencies:
@@ -10443,6 +10469,8 @@ snapshots:
   uid@2.0.2:
     dependencies:
       '@lukeed/csprng': 1.1.0
+
+  undici-types@6.19.8: {}
 
   undici-types@6.20.0: {}
 
