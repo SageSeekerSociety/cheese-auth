@@ -74,7 +74,7 @@ export class UsersController {
     private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
     private readonly oauthService: OAuthService,
-  ) { }
+  ) {}
 
   @ResourceOwnerIdGetter('user')
   async getUserOwner(userId: number): Promise<number | undefined> {
@@ -96,15 +96,15 @@ export class UsersController {
   @NoAuth()
   @Redirect()
   oauthLogin(
-    @Param('providerId') providerId: string, 
+    @Param('providerId') providerId: string,
     @Query('state') state?: string,
-    @Query('access_type') accessType?: string
+    @Query('access_type') accessType?: string,
   ) {
     const provider = this.oauthService.getProvider(providerId);
     if (!provider) {
       throw new NotFoundException(`OAuth provider '${providerId}' not found`);
     }
-    
+
     const authUrl = provider.getAuthorizationUrl(state, accessType);
     return { url: authUrl };
   }
@@ -123,14 +123,14 @@ export class UsersController {
     if (!provider) {
       throw new NotFoundException(`OAuth provider '${providerId}' not found`);
     }
-    
+
     try {
       // 获取访问令牌
       const accessToken = await provider.handleCallback(code, state);
-      
+
       // 获取用户信息
       const userInfo = await provider.getUserInfo(accessToken);
-      
+
       // 调用用户服务进行OAuth登录/注册
       const [userDto, refreshToken] = await this.usersService.loginWithOAuth(
         providerId,
@@ -138,23 +138,26 @@ export class UsersController {
         ip,
         userAgent,
       );
-      
+
       // 刷新会话
-      const [newRefreshToken, jwtToken] = await this.sessionService.refreshSession(refreshToken);
+      const [newRefreshToken, jwtToken] =
+        await this.sessionService.refreshSession(refreshToken);
       const newRefreshTokenExpire = new Date(
         this.authService.decode(newRefreshToken).validUntil,
       );
-      
+
       // 重定向到前端应用的页面
-      const frontendRedirectUrl = new URL(this.configService.get('frontend.url')!);
+      const frontendRedirectUrl = new URL(
+        this.configService.get('frontendBaseUrl')!,
+      );
       frontendRedirectUrl.pathname = '/oauth-success';
       frontendRedirectUrl.searchParams.append('token', jwtToken);
-      
+
       // 获取用户记录来获取邮箱
       const user = await this.usersService.findUserRecordOrThrow(userDto.id);
       // 始终传递email参数给前端，方便用户知道自己的邮箱
       frontendRedirectUrl.searchParams.append('email', user.email);
-      
+
       return res
         .cookie('REFRESH_TOKEN', newRefreshToken, {
           httpOnly: true,
@@ -168,7 +171,7 @@ export class UsersController {
         .redirect(frontendRedirectUrl.toString());
     } catch (error: any) {
       // 错误处理
-      const errorUrl = new URL(this.configService.get('frontend.url')!);
+      const errorUrl = new URL(this.configService.get('frontendBaseUrl')!);
       errorUrl.pathname = '/oauth-error';
       errorUrl.searchParams.append('error', error.message);
       return res.redirect(errorUrl.toString());
