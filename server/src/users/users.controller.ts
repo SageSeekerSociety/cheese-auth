@@ -406,7 +406,8 @@ export class UsersController {
   @Get('/me')
   @Guard('query', 'user')
   async getMe(
-    @UserId(true) userId: number,
+    @Headers('Authorization') @AuthToken() auth: string | undefined,
+    @UserId(true) @ResourceId() userId: number,
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string | undefined,
   ): Promise<GetUserResponseDto> {
