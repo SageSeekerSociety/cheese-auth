@@ -148,9 +148,11 @@ export class UsersController {
 
       // 重定向到前端应用的页面
       const frontendRedirectUrl = new URL(
-        this.configService.get('frontendBaseUrl')!,
+        this.configService.getOrThrow('frontendBaseUrl'),
       );
-      frontendRedirectUrl.pathname = '/oauth-success';
+      frontendRedirectUrl.pathname = this.configService.getOrThrow(
+        'frontendOAuthSuccessPath',
+      );
       frontendRedirectUrl.searchParams.append('token', jwtToken);
 
       // 获取用户记录来获取邮箱
@@ -161,9 +163,10 @@ export class UsersController {
       return res
         .cookie('REFRESH_TOKEN', newRefreshToken, {
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
+          secure: this.configService.get('nodeEnv') === 'production',
           path: path.posix.join(
-            this.configService.get('cookieBasePath')!,
+            this.configService.getOrThrow('cookieBasePath'),
             'users/auth',
           ),
           expires: new Date(newRefreshTokenExpire),
@@ -171,9 +174,14 @@ export class UsersController {
         .redirect(frontendRedirectUrl.toString());
     } catch (error: any) {
       // 错误处理
-      const errorUrl = new URL(this.configService.get('frontendBaseUrl')!);
-      errorUrl.pathname = '/oauth-error';
+      const errorUrl = new URL(
+        this.configService.getOrThrow('frontendBaseUrl'),
+      );
+      errorUrl.pathname = this.configService.getOrThrow(
+        'frontendOAuthErrorPath',
+      );
       errorUrl.searchParams.append('error', error.message);
+      errorUrl.searchParams.append('provider', providerId); // Optionally add provider info
       return res.redirect(errorUrl.toString());
     }
   }
@@ -233,9 +241,10 @@ export class UsersController {
     return res
       .cookie('REFRESH_TOKEN', newRefreshToken, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'lax',
+        secure: this.configService.get('nodeEnv') === 'production',
         path: path.posix.join(
-          this.configService.get('cookieBasePath')!,
+          this.configService.getOrThrow('cookieBasePath'),
           'users/auth',
         ),
         expires: new Date(newRefreshTokenExpire),
@@ -274,9 +283,10 @@ export class UsersController {
     return res
       .cookie('REFRESH_TOKEN', newRefreshToken, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'lax',
+        secure: this.configService.get('nodeEnv') === 'production',
         path: path.posix.join(
-          this.configService.get('cookieBasePath')!,
+          this.configService.getOrThrow('cookieBasePath'),
           'users/auth',
         ),
         expires: new Date(newRefreshTokenExpire),
@@ -326,9 +336,10 @@ export class UsersController {
     return res
       .cookie('REFRESH_TOKEN', newRefreshToken, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'lax',
+        secure: this.configService.get('nodeEnv') === 'production',
         path: path.posix.join(
-          this.configService.get('cookieBasePath')!,
+          this.configService.getOrThrow('cookieBasePath'),
           'users/auth',
         ),
         expires: new Date(newRefreshTokenExpire),
