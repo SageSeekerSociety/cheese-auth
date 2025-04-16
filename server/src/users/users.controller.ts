@@ -403,6 +403,29 @@ export class UsersController {
     };
   }
 
+  @Get('/me')
+  @Guard('query', 'user')
+  async getMe(
+    @Headers('Authorization') @AuthToken() auth: string | undefined,
+    @UserId(true) @ResourceId() userId: number,
+    @Ip() ip: string,
+    @Headers('User-Agent') userAgent: string | undefined,
+  ): Promise<GetUserResponseDto> {
+    const userDto = await this.usersService.getUserDtoById(
+      userId,
+      ip,
+      userId,
+      userAgent,
+    );
+    return {
+      code: 200,
+      message: 'Query current user successfully.',
+      data: {
+        user: userDto,
+      },
+    };
+  }
+
   @Get('/:id')
   @Guard('query', 'user')
   async getUser(

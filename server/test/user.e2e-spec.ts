@@ -694,6 +694,32 @@ describe('User Module', () => {
     });
   });
 
+  describe('/users/me endpoint', () => {
+    it('should return AuthenticationRequiredError without token', async () => {
+      const response = await request(app.getHttpServer()).get('/users/me');
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/^AuthenticationRequiredError:/);
+    });
+
+    it('should return current user info with valid token', async () => {
+      // Ensure TestToken is set from a previous login test
+      expect(TestToken).toBeDefined();
+
+      const response = await request(app.getHttpServer())
+        .get('/users/me')
+        .set('Authorization', `Bearer ${TestToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.code).toBe(200);
+      expect(response.body.message).toBe('Query current user successfully.');
+      expect(response.body.data.user).toBeDefined();
+      expect(response.body.data.user.username).toBe(TestUsername);
+      // Add more checks if needed, e.g., nickname, id, etc.
+      expect(response.body.data.user.nickname).toBe('test_user'); // Assuming nickname is still 'test_user'
+      expect(response.body.data.user.is_follow).toBe(false); // Should be false for self
+    });
+  });
+
   describe('password reset logic', () => {
     it('should return InvalidEmailAddressError', async () => {
       const respond = await request(app.getHttpServer())
