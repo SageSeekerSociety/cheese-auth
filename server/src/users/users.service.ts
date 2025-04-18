@@ -33,7 +33,6 @@ import { UsersRegisterRequestService } from './users-register-request.service';
 import {
   CodeNotMatchError,
   EmailAlreadyRegisteredError,
-  EmailNotFoundError,
   EmailSendFailedError,
   FollowYourselfError,
   InvalidCredentialsError,
@@ -42,7 +41,6 @@ import {
   InvalidNicknameError,
   InvalidPasswordError,
   InvalidUsernameError,
-  PasswordNotMatchError,
   UserAlreadyFollowedError,
   UserIdNotFoundError,
   UserNotFollowedYetError,
@@ -50,6 +48,7 @@ import {
   UsernameNotFoundError,
 } from './users.error';
 import { OAuthUserInfo } from '@sageseekersociety/cheese-auth-oauth-types';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * Service responsible for user-related business logic, including registration,
@@ -66,6 +65,7 @@ export class UsersService {
     private readonly usersRegisterRequestService: UsersRegisterRequestService,
     private readonly avatarsService: AvatarsService,
     private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService,
   ) {}
 
   /** Duration (in seconds) for which a password reset email token is valid. */
@@ -168,8 +168,12 @@ export class UsersService {
 
     /* istanbul ignore if */ // Should not happen based on DB constraints/logic if user exists.
     if (profile == undefined) {
-      Logger.error(`User '${user.username}' (ID: ${userId}) exists but has no profile!`);
-      throw new Error(`User '${user.username}' does not have a profile record.`);
+      Logger.error(
+        `User '${user.username}' (ID: ${userId}) exists but has no profile!`,
+      );
+      throw new Error(
+        `User '${user.username}' does not have a profile record.`,
+      );
     }
     return [user, profile];
   }
@@ -252,19 +256,37 @@ export class UsersService {
     userAgent: string | undefined,
   ): Promise<void> {
     if (!isEmail(email)) {
-      await this.createUserRegisterLog( UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail, email, ip, userAgent );
+      await this.createUserRegisterLog(
+        UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail,
+        email,
+        ip,
+        userAgent,
+      );
       throw new InvalidEmailAddressError(email);
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
-      await this.createUserRegisterLog( UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail, email, ip, userAgent );
-      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
+      await this.createUserRegisterLog(
+        UserRegisterLogType.RequestFailDueToInvalidOrNotSupportedEmail,
+        email,
+        ip,
+        userAgent,
+      );
+      throw new InvalidEmailSuffixError(
+        email,
+        'Email address domain is not allowed.',
+      );
     }
 
     // TODO: Implement rate limiting for sending verification codes.
 
     // Check if the email is already registered by an active user.
     if (await this.isEmailRegistered(email)) {
-      await this.createUserRegisterLog( UserRegisterLogType.RequestFailDueToAlreadyRegistered, email, ip, userAgent );
+      await this.createUserRegisterLog(
+        UserRegisterLogType.RequestFailDueToAlreadyRegistered,
+        email,
+        ip,
+        userAgent,
+      );
       throw new EmailAlreadyRegisteredError(email);
     }
 
@@ -273,13 +295,26 @@ export class UsersService {
     try {
       await this.emailService.sendRegisterCode(email, code);
     } catch (e) {
-      await this.createUserRegisterLog( UserRegisterLogType.RequestFailDueToSendEmailFailure, email, ip, userAgent );
+      await this.createUserRegisterLog(
+        UserRegisterLogType.RequestFailDueToSendEmailFailure,
+        email,
+        ip,
+        userAgent,
+      );
       // Log the underlying error for debugging
-      Logger.error(`Failed to send registration code to ${email}: ${e instanceof Error ? e.message : e}`, e instanceof Error ? e.stack : undefined);
+      Logger.error(
+        `Failed to send registration code to ${email}: ${e instanceof Error ? e.message : e}`,
+        e instanceof Error ? e.stack : undefined,
+      );
       throw new EmailSendFailedError(email);
     }
     await this.usersRegisterRequestService.createRequest(email, code);
-    await this.createUserRegisterLog( UserRegisterLogType.RequestSuccess, email, ip, userAgent );
+    await this.createUserRegisterLog(
+      UserRegisterLogType.RequestSuccess,
+      email,
+      ip,
+      userAgent,
+    );
   }
 
   /**
@@ -380,22 +415,40 @@ export class UsersService {
       throw new InvalidEmailAddressError(email);
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
-      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
+      throw new InvalidEmailSuffixError(
+        email,
+        'Email address domain is not allowed.',
+      );
     }
 
     // Verify email code
-    if (await this.usersRegisterRequestService.verifyRequest(email, emailCode)) {
+    if (
+      this.configService.get<boolean>('disableEmailVerification') ||
+      (await this.usersRegisterRequestService.verifyRequest(email, emailCode))
+    ) {
       // Double-check email and username registration status just before creation
       // to mitigate potential race conditions.
       /* istanbul ignore if */ // Should ideally not happen if checks are done correctly before code generation.
       if (await this.isEmailRegistered(email)) {
         // This indicates a potential issue or race condition. Log and throw generic error?
-        Logger.error(`Registration attempt for already registered email ${email} passed code verification.`);
-        await this.createUserRegisterLog( UserRegisterLogType.FailDueToEmailRaceCondition, email, ip, userAgent ); // Assuming this type exists
+        Logger.error(
+          `Registration attempt for already registered email ${email} passed code verification.`,
+        );
+        await this.createUserRegisterLog(
+          UserRegisterLogType.FailDueToEmailRaceCondition,
+          email,
+          ip,
+          userAgent,
+        ); // Assuming this type exists
         throw new EmailAlreadyRegisteredError(email); // Or a more generic server error
       }
       if (await this.isUsernameRegistered(username)) {
-        await this.createUserRegisterLog( UserRegisterLogType.FailDueToUserExistence, email, ip, userAgent );
+        await this.createUserRegisterLog(
+          UserRegisterLogType.FailDueToUserExistence,
+          email,
+          ip,
+          userAgent,
+        );
         throw new UsernameAlreadyRegisteredError(username);
       }
 
@@ -421,7 +474,12 @@ export class UsersService {
         // No need to include profile here, we have the data
       });
 
-      await this.createUserRegisterLog( UserRegisterLogType.Success, email, ip, userAgent );
+      await this.createUserRegisterLog(
+        UserRegisterLogType.Success,
+        email,
+        ip,
+        userAgent,
+      );
 
       // Manually construct DTO as profile data is already available
       return {
@@ -436,7 +494,12 @@ export class UsersService {
       };
     } else {
       // Code verification failed
-      await this.createUserRegisterLog( UserRegisterLogType.FailDueToWrongCodeOrExpired, email, ip, userAgent );
+      await this.createUserRegisterLog(
+        UserRegisterLogType.FailDueToWrongCodeOrExpired,
+        email,
+        ip,
+        userAgent,
+      );
       throw new CodeNotMatchError(email, emailCode);
     }
   }
@@ -457,7 +520,8 @@ export class UsersService {
     const followCountPromise = this.getFollowingCount(user.id);
     const fansCountPromise = this.getFollowedCount(user.id);
     // Only check follow status if a viewer is specified and is different from the user
-    const ifFollowPromise = (viewerId && viewerId !== user.id)
+    const ifFollowPromise =
+      viewerId && viewerId !== user.id
         ? this.isUserFollowUser(viewerId, user.id)
         : Promise.resolve(false);
 
@@ -494,7 +558,8 @@ export class UsersService {
     viewerId?: number,
     userAgent?: string,
   ): Promise<UserDto> {
-    const [user, profile] = await this.findUserRecordAndProfileRecordOrThrow(userId);
+    const [user, profile] =
+      await this.findUserRecordAndProfileRecordOrThrow(userId);
 
     // Log the profile view attempt
     await this.prismaService.userProfileQueryLog.create({
@@ -532,7 +597,7 @@ export class UsersService {
       if (!bcrypt.compareSync(password, user.hashedPassword)) {
         // Log failed login attempt
         await this.prismaService.userLoginLog.create({
-            data: { userId: user.id, ip, userAgent },
+          data: { userId: user.id, ip, userAgent },
         });
         throw new InvalidCredentialsError();
       }
@@ -547,15 +612,25 @@ export class UsersService {
       });
 
       // Fetch DTO and create session concurrently
-      const userDtoPromise = this.getUserDtoById(user.id, ip, user.id, userAgent); // viewerId is self
+      const userDtoPromise = this.getUserDtoById(
+        user.id,
+        ip,
+        user.id,
+        userAgent,
+      ); // viewerId is self
       const refreshTokenPromise = this.createSession(user.id);
 
-      const [userDto, refreshToken] = await Promise.all([userDtoPromise, refreshTokenPromise]);
+      const [userDto, refreshToken] = await Promise.all([
+        userDtoPromise,
+        refreshTokenPromise,
+      ]);
 
       return [userDto, refreshToken];
     } catch (error) {
       if (error instanceof UsernameNotFoundError) {
-        Logger.warn(`Login attempt failed for non-existent username: ${username}, IP: ${ip}`);
+        Logger.warn(
+          `Login attempt failed for non-existent username: ${username}, IP: ${ip}`,
+        );
         throw new InvalidCredentialsError();
       }
 
@@ -592,12 +667,25 @@ export class UsersService {
   ): Promise<void> {
     if (!isEmail(email)) {
       // No user ID known yet, log without it
-      await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToNoneExistentEmail, undefined, ip, userAgent );
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.RequestFailDueToNoneExistentEmail,
+        undefined,
+        ip,
+        userAgent,
+      );
       throw new InvalidEmailAddressError(email);
     }
     if (!(await this.emailRuleService.isEmailSuffixSupported(email))) {
-       await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToNoneExistentEmail, undefined, ip, userAgent );
-      throw new InvalidEmailSuffixError(email, "Email address domain is not allowed.");
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.RequestFailDueToNoneExistentEmail,
+        undefined,
+        ip,
+        userAgent,
+      );
+      throw new InvalidEmailSuffixError(
+        email,
+        'Email address domain is not allowed.',
+      );
     }
 
     // Find active user by email
@@ -607,10 +695,17 @@ export class UsersService {
 
     if (user == undefined) {
       // Log internally that the email was not found
-      await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToNoneExistentEmail, undefined, ip, userAgent );
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.RequestFailDueToNoneExistentEmail,
+        undefined,
+        ip,
+        userAgent,
+      );
       // IMPORTANT: Do NOT throw an error to the client. Return successfully.
       // This prevents attackers from confirming which emails are registered.
-      Logger.log(`Password reset requested for non-existent or inactive email: ${email}. Responded vaguely.`);
+      Logger.log(
+        `Password reset requested for non-existent or inactive email: ${email}. Responded vaguely.`,
+      );
       return; // Exit gracefully
     }
 
@@ -639,10 +734,23 @@ export class UsersService {
         user.username,
         token,
       );
-      await this.createPasswordResetLog( UserResetPasswordLogType.RequestSuccess, user.id, ip, userAgent );
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.RequestSuccess,
+        user.id,
+        ip,
+        userAgent,
+      );
     } catch (e) {
-       await this.createPasswordResetLog( UserResetPasswordLogType.RequestFailDueToSendEmailFailure, user.id, ip, userAgent );
-       Logger.error(`Failed to send password reset email to ${email}: ${e instanceof Error ? e.message : e}`, e instanceof Error ? e.stack : undefined);
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.RequestFailDueToSendEmailFailure,
+        user.id,
+        ip,
+        userAgent,
+      );
+      Logger.error(
+        `Failed to send password reset email to ${email}: ${e instanceof Error ? e.message : e}`,
+        e instanceof Error ? e.stack : undefined,
+      );
       throw new EmailSendFailedError(email);
     }
   }
@@ -681,14 +789,34 @@ export class UsersService {
     } catch (e) {
       // Log specific failures based on error type
       if (e instanceof PermissionDeniedError) {
-        await this.createPasswordResetLog( UserResetPasswordLogType.FailDueToInvalidToken, userId, ip, userAgent );
-        Logger.warn( `Permission denied during password reset: token = "${token}", ip = "${ip}", userAgent = "${userAgent}"` );
+        await this.createPasswordResetLog(
+          UserResetPasswordLogType.FailDueToInvalidToken,
+          userId,
+          ip,
+          userAgent,
+        );
+        Logger.warn(
+          `Permission denied during password reset: token = "${token}", ip = "${ip}", userAgent = "${userAgent}"`,
+        );
       } else if (e instanceof TokenExpiredError) {
-        await this.createPasswordResetLog( UserResetPasswordLogType.FailDueToExpiredRequest, userId, ip, userAgent );
+        await this.createPasswordResetLog(
+          UserResetPasswordLogType.FailDueToExpiredRequest,
+          userId,
+          ip,
+          userAgent,
+        );
       } else {
-         // Log unexpected errors during token validation
-         await this.createPasswordResetLog( UserResetPasswordLogType.FailDueToInvalidToken, userId, ip, userAgent ); // Or a more generic error type
-         Logger.error(`Unexpected error during password reset token audit: ${e instanceof Error ? e.message : e}`, e instanceof Error ? e.stack : undefined);
+        // Log unexpected errors during token validation
+        await this.createPasswordResetLog(
+          UserResetPasswordLogType.FailDueToInvalidToken,
+          userId,
+          ip,
+          userAgent,
+        ); // Or a more generic error type
+        Logger.error(
+          `Unexpected error during password reset token audit: ${e instanceof Error ? e.message : e}`,
+          e instanceof Error ? e.stack : undefined,
+        );
       }
       throw e; // Re-throw the error after logging
     }
@@ -696,7 +824,12 @@ export class UsersService {
     // Token is valid and authorized, proceed with password reset.
     if (!this.isValidPassword(newPassword)) {
       // Log failure due to invalid password format
-      await this.createPasswordResetLog( UserResetPasswordLogType.FailDueToInvalidPassword, userId, ip, userAgent ); // Assuming this type exists
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.FailDueToInvalidPassword,
+        userId,
+        ip,
+        userAgent,
+      ); // Assuming this type exists
       throw new InvalidPasswordError(this.passwordRule);
     }
 
@@ -707,9 +840,18 @@ export class UsersService {
 
     /* istanbul ignore if */ // Should not happen if token validation passed and user wasn't deleted concurrently.
     if (user == undefined) {
-      await this.createPasswordResetLog( UserResetPasswordLogType.FailDueToNoUser, userId, ip, userAgent );
-      Logger.error(`Password reset authorized for user ${userId}, but user not found or inactive.`);
-      throw new Error( `User associated with the valid reset token (ID: ${userId}) could not be found or is inactive.` );
+      await this.createPasswordResetLog(
+        UserResetPasswordLogType.FailDueToNoUser,
+        userId,
+        ip,
+        userAgent,
+      );
+      Logger.error(
+        `Password reset authorized for user ${userId}, but user not found or inactive.`,
+      );
+      throw new Error(
+        `User associated with the valid reset token (ID: ${userId}) could not be found or is inactive.`,
+      );
     }
 
     // Hash the new password and update the user record
@@ -722,7 +864,12 @@ export class UsersService {
     });
 
     // Log successful password reset
-    await this.createPasswordResetLog( UserResetPasswordLogType.Success, userId, ip, userAgent );
+    await this.createPasswordResetLog(
+      UserResetPasswordLogType.Success,
+      userId,
+      ip,
+      userAgent,
+    );
   }
 
   /**
@@ -742,30 +889,34 @@ export class UsersService {
     intro: string,
     avatarId: number,
   ): Promise<void> {
-     if (!this.isValidNickname(nickname)) {
+    if (!this.isValidNickname(nickname)) {
       throw new InvalidNicknameError(nickname, this.nicknameRule);
     }
 
     // Use transaction to ensure atomicity of profile update and avatar counts
     await this.prismaService.$transaction(async (prisma) => {
       // Find existing profile and verify user/avatar concurrently
-      const profilePromise = prisma.userProfile.findUnique({ where: { userId } });
+      const profilePromise = prisma.userProfile.findUnique({
+        where: { userId },
+      });
       const avatarExistsPromise = this.avatarsService.isAvatarExists(avatarId); // Use non-prisma instance here
       const userExistsPromise = this.isUserExists(userId); // Use non-prisma instance here
 
       const [profile, avatarExists, userExists] = await Promise.all([
-          profilePromise,
-          avatarExistsPromise,
-          userExistsPromise
+        profilePromise,
+        avatarExistsPromise,
+        userExistsPromise,
       ]);
 
       if (!userExists) {
-          throw new UserIdNotFoundError(userId); // Throw before profile check
+        throw new UserIdNotFoundError(userId); // Throw before profile check
       }
       if (profile == null) {
-          // This case implies data inconsistency if userExists is true
-          Logger.error(`User ${userId} exists but profile is missing during update attempt.`);
-          throw new Error(`Profile not found for user ${userId}.`);
+        // This case implies data inconsistency if userExists is true
+        Logger.error(
+          `User ${userId} exists but profile is missing during update attempt.`,
+        );
+        throw new Error(`Profile not found for user ${userId}.`);
       }
       if (!avatarExists) {
         throw new AvatarNotFoundError(avatarId);
@@ -805,7 +956,6 @@ export class UsersService {
     ip?: string, // Mark as optional if not always used/required
     userAgent?: string,
   ): Promise<[UserDto[], PageDto]> {
-
     const commonWhere = { deletedAt: null }; // Filter for active users
 
     if (firstUserId === undefined) {
@@ -818,7 +968,10 @@ export class UsersService {
       });
       const DTOs = await Promise.all(
         users.map((u) => {
-          assert(u.userProfile, `User ${u.id} is missing profile in getUsers query.`);
+          assert(
+            u.userProfile,
+            `User ${u.id} is missing profile in getUsers query.`,
+          );
           return this.toUserDto(u, u.userProfile, viewerId);
         }),
       );
@@ -840,13 +993,16 @@ export class UsersService {
       });
 
       const [prevUsers, currentAndNextUsers] = await Promise.all([
-          prevUsersPromise,
-          currentAndNextUsersPromise
+        prevUsersPromise,
+        currentAndNextUsersPromise,
       ]);
 
       const DTOs = await Promise.all(
         currentAndNextUsers.map((u) => {
-           assert(u.userProfile, `User ${u.id} is missing profile in getUsers query.`);
+          assert(
+            u.userProfile,
+            `User ${u.id} is missing profile in getUsers query.`,
+          );
           return this.toUserDto(u, u.userProfile, viewerId);
         }),
       );
@@ -873,17 +1029,20 @@ export class UsersService {
     followeeId: number,
   ): Promise<UserFollowingRelationship | undefined> {
     // Find active relationships (deletedAt is null)
-    let relationships = await this.prismaService.userFollowingRelationship.findMany({
-      where: {
-        followerId,
-        followeeId,
-        deletedAt: null, // Ensure we only get active relationships
-      },
-    });
+    let relationships =
+      await this.prismaService.userFollowingRelationship.findMany({
+        where: {
+          followerId,
+          followeeId,
+          deletedAt: null, // Ensure we only get active relationships
+        },
+      });
 
     /* istanbul ignore if */ // Handles data inconsistency: multiple active follow records shouldn't exist.
     if (relationships.length > 1) {
-      Logger.warn( `Found ${relationships.length} active follow relationships between user ${followerId} and user ${followeeId}. Cleaning up duplicates.` );
+      Logger.warn(
+        `Found ${relationships.length} active follow relationships between user ${followerId} and user ${followeeId}. Cleaning up duplicates.`,
+      );
       // Keep the latest relationship (assume highest ID is latest) and mark others as deleted.
       const latestRelationship = relationships.sort((a, b) => b.id - a.id)[0];
       await this.prismaService.userFollowingRelationship.updateMany({
@@ -926,7 +1085,10 @@ export class UsersService {
     if (!followeeExists) throw new UserIdNotFoundError(followeeId);
 
     // Check if an active relationship already exists.
-    const existingRelationship = await this.getUniqueFollowRelationship( followerId, followeeId );
+    const existingRelationship = await this.getUniqueFollowRelationship(
+      followerId,
+      followeeId,
+    );
     if (existingRelationship) {
       throw new UserAlreadyFollowedError(followeeId);
     }
@@ -951,13 +1113,16 @@ export class UsersService {
     followerId: number,
     followeeId: number,
   ): Promise<void> {
-     if (followerId === followeeId) {
-        // Technically not possible to follow self based on addFollowRelationship logic, but good practice to check.
-        throw new UserNotFollowedYetError(followeeId); // Or a different error?
+    if (followerId === followeeId) {
+      // Technically not possible to follow self based on addFollowRelationship logic, but good practice to check.
+      throw new UserNotFollowedYetError(followeeId); // Or a different error?
     }
 
     // Find the specific active relationship to delete.
-    const relationship = await this.getUniqueFollowRelationship( followerId, followeeId );
+    const relationship = await this.getUniqueFollowRelationship(
+      followerId,
+      followeeId,
+    );
 
     if (relationship === undefined) {
       // Before throwing, quickly check if users exist to provide a slightly better context, though not strictly necessary.
@@ -973,7 +1138,7 @@ export class UsersService {
       where: { id: relationship.id }, // Target the specific relationship ID
       data: { deletedAt: new Date() },
     });
-     // TODO: Consider emitting an event or notification here.
+    // TODO: Consider emitting an event or notification here.
   }
 
   /**
@@ -1007,11 +1172,12 @@ export class UsersService {
 
     if (firstFollowerId === undefined) {
       // Fetch initial page
-      const relations = await this.prismaService.userFollowingRelationship.findMany({
-        where: commonWhere,
-        take: pageSize + 1,
-        orderBy: { followerId: 'asc' },
-      });
+      const relations =
+        await this.prismaService.userFollowingRelationship.findMany({
+          where: commonWhere,
+          take: pageSize + 1,
+          orderBy: { followerId: 'asc' },
+        });
       const DTOs = await Promise.all(
         relations.map((r) => {
           return this.getUserDtoById(r.followerId, ip, viewerId, userAgent);
@@ -1020,21 +1186,23 @@ export class UsersService {
       return PageHelper.PageStart(DTOs, pageSize, (item) => item.id);
     } else {
       // Fetch middle page using cursor
-      const prevRelationsPromise = this.prismaService.userFollowingRelationship.findMany({
-        where: { ...commonWhere, followerId: { lt: firstFollowerId } },
-        take: pageSize,
-        orderBy: { followerId: 'desc' },
-        select: { followerId: true }, // Only need ID for PageHelper
-      });
-      const currentAndNextRelationsPromise = this.prismaService.userFollowingRelationship.findMany({
-        where: { ...commonWhere, followerId: { gte: firstFollowerId } },
-        take: pageSize + 1,
-        orderBy: { followerId: 'asc' },
-      });
+      const prevRelationsPromise =
+        this.prismaService.userFollowingRelationship.findMany({
+          where: { ...commonWhere, followerId: { lt: firstFollowerId } },
+          take: pageSize,
+          orderBy: { followerId: 'desc' },
+          select: { followerId: true }, // Only need ID for PageHelper
+        });
+      const currentAndNextRelationsPromise =
+        this.prismaService.userFollowingRelationship.findMany({
+          where: { ...commonWhere, followerId: { gte: firstFollowerId } },
+          take: pageSize + 1,
+          orderBy: { followerId: 'asc' },
+        });
 
       const [prevRelations, currentAndNextRelations] = await Promise.all([
-          prevRelationsPromise,
-          currentAndNextRelationsPromise
+        prevRelationsPromise,
+        currentAndNextRelationsPromise,
       ]);
 
       const DTOs = await Promise.all(
@@ -1047,7 +1215,7 @@ export class UsersService {
         DTOs,
         pageSize,
         (i) => i.followerId, // ID from prev items
-        (i) => i.id,         // User ID from DTO items
+        (i) => i.id, // User ID from DTO items
       );
     }
   }
@@ -1079,15 +1247,16 @@ export class UsersService {
 
     const commonWhere = { followerId, deletedAt: null }; // Base query for active followees
 
-     // TODO: Log followee list access attempt here if needed, including followerId, viewerId, ip.
+    // TODO: Log followee list access attempt here if needed, including followerId, viewerId, ip.
 
     if (firstFolloweeId === undefined) {
       // Fetch initial page
-      const relations = await this.prismaService.userFollowingRelationship.findMany({
-        where: commonWhere,
-        take: pageSize + 1,
-        orderBy: { followeeId: 'asc' },
-      });
+      const relations =
+        await this.prismaService.userFollowingRelationship.findMany({
+          where: commonWhere,
+          take: pageSize + 1,
+          orderBy: { followeeId: 'asc' },
+        });
       const DTOs = await Promise.all(
         relations.map((r) => {
           return this.getUserDtoById(r.followeeId, ip, viewerId, userAgent);
@@ -1096,21 +1265,23 @@ export class UsersService {
       return PageHelper.PageStart(DTOs, pageSize, (item) => item.id);
     } else {
       // Fetch middle page using cursor
-      const prevRelationsPromise = this.prismaService.userFollowingRelationship.findMany({
-        where: { ...commonWhere, followeeId: { lt: firstFolloweeId } },
-        take: pageSize,
-        orderBy: { followeeId: 'desc' },
-        select: { followeeId: true }, // Only need ID for PageHelper
-      });
-      const currentAndNextRelationsPromise = this.prismaService.userFollowingRelationship.findMany({
-        where: { ...commonWhere, followeeId: { gte: firstFolloweeId } },
-        take: pageSize + 1,
-        orderBy: { followeeId: 'asc' },
-      });
+      const prevRelationsPromise =
+        this.prismaService.userFollowingRelationship.findMany({
+          where: { ...commonWhere, followeeId: { lt: firstFolloweeId } },
+          take: pageSize,
+          orderBy: { followeeId: 'desc' },
+          select: { followeeId: true }, // Only need ID for PageHelper
+        });
+      const currentAndNextRelationsPromise =
+        this.prismaService.userFollowingRelationship.findMany({
+          where: { ...commonWhere, followeeId: { gte: firstFolloweeId } },
+          take: pageSize + 1,
+          orderBy: { followeeId: 'asc' },
+        });
 
-       const [prevRelations, currentAndNextRelations] = await Promise.all([
-          prevRelationsPromise,
-          currentAndNextRelationsPromise
+      const [prevRelations, currentAndNextRelations] = await Promise.all([
+        prevRelationsPromise,
+        currentAndNextRelationsPromise,
       ]);
 
       const DTOs = await Promise.all(
@@ -1123,7 +1294,7 @@ export class UsersService {
         DTOs,
         pageSize,
         (i) => i.followeeId, // ID from prev items
-        (i) => i.id,         // User ID from DTO items
+        (i) => i.id, // User ID from DTO items
       );
     }
   }
@@ -1136,7 +1307,11 @@ export class UsersService {
    */
   async isUserExists(userId: number): Promise<boolean> {
     // Assumes soft delete via deletedAt field
-    return (await this.prismaService.user.count({ where: { id: userId, deletedAt: null } })) > 0;
+    return (
+      (await this.prismaService.user.count({
+        where: { id: userId, deletedAt: null },
+      })) > 0
+    );
   }
 
   /**
@@ -1171,7 +1346,11 @@ export class UsersService {
     followerId?: number,
     followeeId?: number,
   ): Promise<boolean> {
-    if (followerId === undefined || followeeId === undefined || followerId === followeeId) {
+    if (
+      followerId === undefined ||
+      followeeId === undefined ||
+      followerId === followeeId
+    ) {
       return false;
     }
     const result = await this.prismaService.userFollowingRelationship.count({
@@ -1208,24 +1387,36 @@ export class UsersService {
     let profile: UserProfile;
 
     // 1. Check for existing OAuth connection to an active user
-    const oauthConnection = await this.prismaService.userOAuthConnection.findUnique({
-      where: {
-        providerId_providerUserId: { providerId, providerUserId: userInfo.id },
-      },
-      include: { user: { include: { userProfile: true } } }, // Include linked user and profile
-    });
+    const oauthConnection =
+      await this.prismaService.userOAuthConnection.findUnique({
+        where: {
+          providerId_providerUserId: {
+            providerId,
+            providerUserId: userInfo.id,
+          },
+        },
+        include: { user: { include: { userProfile: true } } }, // Include linked user and profile
+      });
 
     // 2. If connection exists and user is active, use this user
     if (oauthConnection?.user && !oauthConnection.user.deletedAt) {
       user = oauthConnection.user;
       if (!oauthConnection.user.userProfile) {
         // Handle edge case: user exists but profile is missing
-        Logger.error(`OAuth Login: User ${user.id} found via connection but missing profile! Recreating default.`);
+        Logger.error(
+          `OAuth Login: User ${user.id} found via connection but missing profile! Recreating default.`,
+        );
         const avatarId = await this.avatarsService.getDefaultAvatarId();
-        profile = await this.prismaService.userProfile.upsert({ // Use upsert just in case it was created concurrently
-            where: { userId: user.id },
-            update: {}, // No update needed if found
-            create: { userId: user.id, nickname: user.username, intro: this.defaultIntro, avatarId }
+        profile = await this.prismaService.userProfile.upsert({
+          // Use upsert just in case it was created concurrently
+          where: { userId: user.id },
+          update: {}, // No update needed if found
+          create: {
+            userId: user.id,
+            nickname: user.username,
+            intro: this.defaultIntro,
+            avatarId,
+          },
         });
       } else {
         profile = oauthConnection.user.userProfile;
@@ -1234,7 +1425,9 @@ export class UsersService {
       // Be cautious about overwriting user's explicit choices.
     } else {
       // 3. No valid connection found. Try finding an active user by email.
-      let existingUserByEmail: (User & { userProfile: UserProfile | null }) | null = null;
+      let existingUserByEmail:
+        | (User & { userProfile: UserProfile | null })
+        | null = null;
       if (userInfo.email) {
         existingUserByEmail = await this.prismaService.user.findUnique({
           where: { email: userInfo.email, deletedAt: null }, // Must be active
@@ -1247,29 +1440,53 @@ export class UsersService {
         user = existingUserByEmail;
         if (!existingUserByEmail.userProfile) {
           // Handle edge case: user exists but profile is missing
-           Logger.error(`OAuth Login: User ${user.id} found via email but missing profile! Recreating default.`);
-           const avatarId = await this.avatarsService.getDefaultAvatarId();
-           profile = await this.prismaService.userProfile.upsert({
-                where: { userId: user.id }, update: {},
-                create: { userId: user.id, nickname: user.username, intro: this.defaultIntro, avatarId }
-            });
+          Logger.error(
+            `OAuth Login: User ${user.id} found via email but missing profile! Recreating default.`,
+          );
+          const avatarId = await this.avatarsService.getDefaultAvatarId();
+          profile = await this.prismaService.userProfile.upsert({
+            where: { userId: user.id },
+            update: {},
+            create: {
+              userId: user.id,
+              nickname: user.username,
+              intro: this.defaultIntro,
+              avatarId,
+            },
+          });
         } else {
           profile = existingUserByEmail.userProfile;
         }
         // Create or update the OAuth connection link for this user
         await this.prismaService.userOAuthConnection.upsert({
-          where: { providerId_providerUserId: { providerId, providerUserId: userInfo.id } },
+          where: {
+            providerId_providerUserId: {
+              providerId,
+              providerUserId: userInfo.id,
+            },
+          },
           update: { userId: user.id, rawProfile: userInfo }, // Update link if it pointed elsewhere
-          create: { providerId, providerUserId: userInfo.id, userId: user.id, rawProfile: userInfo },
+          create: {
+            providerId,
+            providerUserId: userInfo.id,
+            userId: user.id,
+            rawProfile: userInfo,
+          },
         });
-         Logger.log(`OAuth Login: Linked existing user ${user.id} (found by email) to ${providerId} ID ${userInfo.id}.`);
+        Logger.log(
+          `OAuth Login: Linked existing user ${user.id} (found by email) to ${providerId} ID ${userInfo.id}.`,
+        );
       } else {
         // 5. No existing active user found, create a new one
         // Generate a unique username based on OAuth info, handling conflicts
-        let baseUsername = userInfo.preferredUsername || userInfo.name || `user_${userInfo.id}`;
-        baseUsername = baseUsername.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase(); // Sanitize
+        let baseUsername =
+          userInfo.preferredUsername || userInfo.name || `user_${userInfo.id}`;
+        baseUsername = baseUsername
+          .replace(/[^a-zA-Z0-9_-]/g, '_')
+          .toLowerCase(); // Sanitize
         if (baseUsername.length < 4) baseUsername = `user_${baseUsername}`; // Ensure min length
-        if (baseUsername.length > 32) baseUsername = baseUsername.substring(0, 32); // Ensure max length
+        if (baseUsername.length > 32)
+          baseUsername = baseUsername.substring(0, 32); // Ensure max length
 
         let finalUsername = baseUsername;
         let suffix = 1;
@@ -1288,7 +1505,8 @@ export class UsersService {
 
         // Create user, profile, and OAuth connection within a transaction
         try {
-            const newUser = await this.prismaService.$transaction(async (prisma) => {
+          const newUser = await this.prismaService.$transaction(
+            async (prisma) => {
               const createdUser = await prisma.user.create({
                 data: {
                   username: uniqueUsername,
@@ -1307,24 +1525,42 @@ export class UsersService {
 
               // Create the OAuth connection link
               await prisma.userOAuthConnection.create({
-                data: { providerId, providerUserId: userInfo.id, userId: createdUser.id, rawProfile: userInfo },
+                data: {
+                  providerId,
+                  providerUserId: userInfo.id,
+                  userId: createdUser.id,
+                  rawProfile: userInfo,
+                },
               });
 
               return createdUser;
-            });
+            },
+          );
 
-            user = newUser;
-            assert(newUser.userProfile, "User profile should have been created in transaction");
-            profile = newUser.userProfile;
+          user = newUser;
+          assert(
+            newUser.userProfile,
+            'User profile should have been created in transaction',
+          );
+          profile = newUser.userProfile;
 
-            // Log successful OAuth registration
-            await this.createUserRegisterLog( UserRegisterLogType.SuccessViaOAuth, user.email || 'N/A', ip, userAgent ); // Assuming this type exists
-            Logger.log(`OAuth Login: Created new user ${user.id} (${user.username}) via ${providerId}.`);
-
+          // Log successful OAuth registration
+          await this.createUserRegisterLog(
+            UserRegisterLogType.SuccessViaOAuth,
+            user.email || 'N/A',
+            ip,
+            userAgent,
+          ); // Assuming this type exists
+          Logger.log(
+            `OAuth Login: Created new user ${user.id} (${user.username}) via ${providerId}.`,
+          );
         } catch (error) {
-             Logger.error(`OAuth Login: Failed to create new user via transaction: ${error instanceof Error ? error.message : error}`, error instanceof Error ? error.stack : undefined);
-             // Rethrow a generic error or handle appropriately
-             throw new Error("Failed to register user via OAuth.");
+          Logger.error(
+            `OAuth Login: Failed to create new user via transaction: ${error instanceof Error ? error.message : error}`,
+            error instanceof Error ? error.stack : undefined,
+          );
+          // Rethrow a generic error or handle appropriately
+          throw new Error('Failed to register user via OAuth.');
         }
       }
     }
@@ -1353,7 +1589,8 @@ export class UsersService {
    * @returns A randomly generated password string (16 characters).
    */
   private generateRandomPassword(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
     const passwordLength = 16;
     let password = '';
 

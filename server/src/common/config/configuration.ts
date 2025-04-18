@@ -8,6 +8,7 @@ export default () => {
       secret: process.env.JWT_SECRET,
       // expiresIn: process.env.JWT_EXPIRES_IN,
     },
+    disableEmailVerification: process.env.DISABLE_EMAIL_VERIFICATION === 'true',
     cookieBasePath: process.env.COOKIE_BASE_PATH || '/',
     frontendBaseUrl: process.env.FRONTEND_BASE_URL || '',
     passwordResetPath:
